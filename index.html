@@ -32,7 +32,7 @@
     }
 
     .navbar img {
-      height: 40px;
+      height: 35px;
     }
 
     .logo {
@@ -60,18 +60,25 @@
       text-align: center;
     }
 
+    .upload-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
     .upload-label {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       background-color: #ecf0f1;
       border: 2px dashed #bdc3c7;
-      padding: 8px 12px;
-      border-radius: 10px;
+      padding: 10px 16px;
+      border-radius: 50px;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 14px;
       color: #34495e;
       transition: all 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 
     .upload-label:hover {
@@ -82,6 +89,7 @@
       font-style: normal;
       font-weight: bold;
       color: #2980b9;
+      font-size: 18px;
     }
 
     input[type="file"] {
@@ -163,10 +171,12 @@
   <div class="container">
     <h2>تحقق من توافق سيرتك الذاتية مع نظام ATS</h2>
     <form id="uploadForm">
-      <label class="upload-label">
-        <i>⬆</i> رفع السيرة الذاتية
-        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
-      </label>
+      <div class="upload-wrapper">
+        <label class="upload-label">
+          <i>📤</i> رفع السيرة الذاتية
+          <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
+        </label>
+      </div>
       <textarea id="jobDescription" rows="4" placeholder="ألصق وصف الوظيفة هنا للمقارنة... (اختياري)"></textarea>
       <button class="analyze-btn" type="submit">تحليل</button>
     </form>
