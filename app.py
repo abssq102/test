@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PyPDF2 import PdfReader
@@ -6,7 +7,7 @@ import re
 import os
 
 app = Flask(__name__)
-CORS(app)  # ✅ هذا يتيح الوصول من متصفحات أخرى
+CORS(app)
 
 def extract_text(file_storage):
     filename = file_storage.filename.lower()
@@ -23,25 +24,44 @@ def extract_text(file_storage):
 
 def analyze_text(text):
     if not text or len(text.strip()) < 100:
-        return 0
+        return 0, {'found': [], 'missing': []}
+
+    keywords = {
+        'experience': ['experience', 'worked at', 'job history'],
+        'education': ['education', 'degree', 'university', 'bachelor'],
+        'skills': ['skills', 'proficient in', 'tools'],
+        'contact': ['email', 'phone', 'contact'],
+        'objective': ['objective', 'summary'],
+        'certification': ['certification', 'certified', 'license']
+    }
+
+    found = []
+    missing = []
     score = 100
-    keywords = ['experience', 'education', 'skills', 'contact', 'objective', 'certification']
-    found_keywords = sum(1 for word in keywords if word in text.lower())
-    score -= (len(keywords) - found_keywords) * 10
+
+    text_lower = text.lower()
+
+    for key, variants in keywords.items():
+        if any(variant in text_lower for variant in variants):
+            found.append(key)
+        else:
+            missing.append(key)
+            score -= 10
 
     if re.search(r'[\u2022•★●]', text):
         score -= 10
     if len(text) > 5000:
         score -= 5
 
-    return max(score, 0)
+    score = max(score, 0)
+    return score, {'found': found, 'missing': missing}
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
     uploaded_file = request.files['resume']
     text = extract_text(uploaded_file)
-    score = analyze_text(text)
-    return jsonify({'score': score})
+    score, details = analyze_text(text)
+    return jsonify({'score': score, 'details': details})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
