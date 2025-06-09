@@ -17,9 +17,27 @@
       flex-direction: column;
     }
 
+    .navbar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: 0;
+      background: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 999;
+    }
+
+    .navbar img {
+      height: 40px;
+    }
+
     .logo {
       width: 200px;
-      margin-top: 30px;
+      margin-top: 90px;
       animation: fadeIn 1s ease-in-out;
     }
 
@@ -32,6 +50,7 @@
       max-width: 850px;
       text-align: right;
       animation: slideUp 0.8s ease-in-out;
+      margin-top: 20px;
     }
 
     h2 {
@@ -138,7 +157,9 @@
   </style>
 </head>
 <body>
-  <img class="logo" src="logo.png" alt="Logo">
+  <div class="navbar">
+    <img src="logo.png" alt="Logo">
+  </div>
   <div class="container">
     <h2>تحقق من توافق سيرتك الذاتية مع نظام ATS</h2>
     <form id="uploadForm">
