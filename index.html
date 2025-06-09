@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تحقق من توافق سيرتك الذاتية مع نظام (ATS)</title>
+  <title>تحقق من توافق سيرتك الذاتية مع ATS</title>
   <style>
     body {
       margin: 0;
@@ -32,7 +32,10 @@
     }
 
     .navbar img {
-      height: 35px;
+      height: 30px;
+      background: white;
+      padding: 4px 10px;
+      border-radius: 8px;
     }
 
     .logo {
@@ -64,6 +67,8 @@
       display: flex;
       justify-content: center;
       margin-bottom: 10px;
+      flex-direction: column;
+      align-items: center;
     }
 
     .upload-label {
@@ -90,6 +95,12 @@
       font-weight: bold;
       color: #2980b9;
       font-size: 18px;
+    }
+
+    .filename {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #2c3e50;
     }
 
     input[type="file"] {
@@ -173,9 +184,10 @@
     <form id="uploadForm">
       <div class="upload-wrapper">
         <label class="upload-label">
-          <i>📤</i> قم برفع السيرة الذاتية *Word & PDF
+          <i>📤</i> رفع السيرة الذاتية
           <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
         </label>
+        <div class="filename" id="fileName"></div>
       </div>
       <textarea id="jobDescription" rows="4" placeholder="ألصق وصف الوظيفة هنا للمقارنة... (اختياري)"></textarea>
       <button class="analyze-btn" type="submit">تحليل</button>
@@ -194,6 +206,17 @@
   </footer>
 
   <script>
+    const resumeInput = document.getElementById('resumeFile');
+    const fileNameDisplay = document.getElementById('fileName');
+
+    resumeInput.addEventListener('change', () => {
+      if (resumeInput.files.length) {
+        fileNameDisplay.textContent = `📄 تم اختيار الملف: ${resumeInput.files[0].name}`;
+      } else {
+        fileNameDisplay.textContent = '';
+      }
+    });
+
     document.getElementById('uploadForm').addEventListener('submit', async function (e) {
       e.preventDefault();
       const fileInput = document.getElementById('resumeFile');
@@ -202,6 +225,8 @@
         alert("يرجى اختيار ملف السيرة الذاتية");
         return;
       }
+
+      document.getElementById('score').innerText = "⏳ جاري تحليل الملف...";
 
       const formData = new FormData();
       formData.append("resume", fileInput.files[0]);
