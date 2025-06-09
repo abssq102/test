@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from PyPDF2 import PdfReader
 import docx2txt
 import re
+import os
 
 app = Flask(__name__)
 
@@ -40,9 +41,6 @@ def analyze():
     score = analyze_text(text)
     return jsonify({'score': score})
 
-import os
-
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
