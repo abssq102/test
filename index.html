@@ -1,37 +1,35 @@
 
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resume ATS Checker</title>
+  <title>تحقق من توافق سيرتك الذاتية مع نظام ATS</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 30px; background: #f5f5f5; direction: rtl; }
-    .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 700px; margin: auto; }
-    h2 { color: #333; }
-    input[type=file], textarea { margin-top: 10px; width: 100%; padding: 10px; font-size: 14px; }
-    button { margin-top: 10px; padding: 10px 20px; font-size: 16px; }
-    #score { font-size: 24px; font-weight: bold; color: #2c7; margin-top: 20px; }
-    #details, #notes, #suggestions, #match { margin-top: 15px; font-size: 16px; color: #555; }
-    .missing { color: red; }
+    body { font-family: Arial, sans-serif; padding: 30px; background: #f9f9f9; direction: rtl; }
+    .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+    h2 { color: #222; text-align: center; }
+    input, textarea, button { margin-top: 10px; width: 100%; padding: 10px; font-size: 14px; }
+    #score { font-size: 24px; font-weight: bold; color: green; margin-top: 20px; }
+    #details, #match, #fonts, #notes, #suggestions { margin-top: 15px; }
     .found { color: green; }
-    .note { color: orange; }
-    .suggestion { color: #0077cc; }
+    .missing { color: red; }
+    li { margin-bottom: 5px; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>تحقق من توافق سيرتك الذاتية مع نظام ATS</h2>
-    <form id="uploadForm" enctype="multipart/form-data">
-      <input type="file" name="resume" id="resumeFile" accept=".pdf,.doc,.docx">
-      <textarea id="jobDescription" rows="6" placeholder="ألصق وصف الوظيفة هنا للمقارنة... (اختياري)"></textarea>
+    <form id="uploadForm">
+      <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
+      <textarea id="jobDescription" rows="4" placeholder="ألصق وصف الوظيفة هنا للمقارنة... (اختياري)"></textarea>
       <button type="submit">تحليل</button>
     </form>
     <div id="score"></div>
+    <div id="match"></div>
     <div id="details"></div>
+    <div id="fonts"></div>
     <div id="notes"></div>
     <div id="suggestions"></div>
-    <div id="match"></div>
   </div>
 
   <script>
@@ -40,51 +38,50 @@
       const fileInput = document.getElementById('resumeFile');
       const jobDescription = document.getElementById('jobDescription').value.trim();
       if (!fileInput.files.length) {
-        alert('يرجى رفع ملف PDF أو Word');
+        alert("يرجى اختيار ملف السيرة الذاتية");
         return;
       }
-      const formData = new FormData();
-      formData.append('resume', fileInput.files[0]);
-      formData.append('job_description', jobDescription);
 
-      const response = await fetch('https://test-ygja.onrender.com/analyze', {
-        method: 'POST',
+      const formData = new FormData();
+      formData.append("resume", fileInput.files[0]);
+      formData.append("job_description", jobDescription);
+
+      const response = await fetch("https://test-ygja.onrender.com/analyze", {
+        method: "POST",
         body: formData
       });
+
       const data = await response.json();
       document.getElementById('score').innerText = `نسبة التوافق: ${data.score}%`;
 
-      const detailsEl = document.getElementById('details');
-      let html = "<div><strong>تحليل التفاصيل:</strong><ul>";
-      data.details?.found?.forEach(k => html += `<li class='found'>✅ موجود: ${k}</li>`);
-      data.details?.missing?.forEach(k => html += `<li class='missing'>❌ مفقود: ${k}</li>`);
-      html += "</ul></div>";
-      detailsEl.innerHTML = html;
+      let html = "<strong>تحليل التفاصيل:</strong><ul>";
+      data.details.found.forEach(k => html += `<li class="found">✅ موجود: ${k}</li>`);
+      data.details.missing.forEach(k => html += `<li class="missing">❌ مفقود: ${k}</li>`);
+      html += "</ul>";
+      document.getElementById('details').innerHTML = html;
 
-      const notesEl = document.getElementById('notes');
-      if (data.notes?.length) {
-        let notesHtml = "<div><strong>⚠️ ملاحظات:</strong><ul>";
-        data.notes.forEach(n => notesHtml += `<li class='note'>${n}</li>`);
-        notesHtml += "</ul></div>";
-        notesEl.innerHTML = notesHtml;
-      } else {
-        notesEl.innerHTML = "";
-      }
-
-      const suggestionsEl = document.getElementById('suggestions');
-      if (data.suggestions?.length) {
-        let sugHtml = "<div><strong>💡 اقتراحات لتحسين السيرة:</strong><ul>";
-        data.suggestions.forEach(s => sugHtml += `<li class='suggestion'>${s}</li>`);
-        sugHtml += "</ul></div>";
-        suggestionsEl.innerHTML = sugHtml;
-      } else {
-        suggestionsEl.innerHTML = "";
-      }
-
-      if (data.match_score !== undefined) {
-        document.getElementById('match').innerText = `نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%`;
+      if (data.match_score !== undefined && data.match_score !== null) {
+        document.getElementById('match').innerText = `📊 نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%`;
       } else {
         document.getElementById('match').innerText = '';
+      }
+
+      if (data.fonts?.length) {
+        document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة في الملف: ${data.fonts.join(", ")}`;
+      } else {
+        document.getElementById('fonts').innerHTML = '';
+      }
+
+      if (data.notes?.length) {
+        document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات:</strong><ul>' + data.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>';
+      } else {
+        document.getElementById('notes').innerHTML = '';
+      }
+
+      if (data.suggestions?.length) {
+        document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات لتحسين السيرة:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
+      } else {
+        document.getElementById('suggestions').innerHTML = '';
       }
     });
   </script>
