@@ -591,90 +591,94 @@
 
       document.getElementById('score').innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري تحليل الملف...`;
 
-      // Simulate API call delay
-      setTimeout(() => {
-        // Mock data for demonstration
-        const mockData = {
-          score: "85%",
-          details: {
-            found: ["مهارات القيادة", "إدارة المشاريع", "التواصل الفعال", "حل المشكلات", "العمل الجماعي"],
-            missing: ["تحليل البيانات", "التسويق الرقمي", "اللغة الإنجليزية"]
-          },
-          match_score: "78%",
-          fonts: ["Arial", "Times New Roman"],
-          notes: [
-            "يوجد جدول في السيرة الذاتية قد لا تتم قراءته بشكل صحيح",
-            "بعض الأقسام غير منظمة بشكل كافٍ",
-            "الملف يحتوي على صور قد تؤثر على القراءة"
-          ],
-          suggestions: [
-            "أضف المزيد من الكلمات المفتاحية من وصف الوظيفة",
-            "استخدم تنسيقًا أبسط للجداول",
-            "أضف قسمًا للمهارات التقنية",
-            "اختصر الوصف الوظيفي السابق"
-          ]
-        };
+      const formData = new FormData();
+      formData.append("resume", fileInput.files[0]);
+      formData.append("job_description", jobDescription);
 
-        // Update UI with mock data
-        updateUI(mockData);
-      }, 2500);
+      try {
+        const response = await fetch("https://test-ygja.onrender.com/analyze", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+        
+        // تحديث واجهة المستخدم مع البيانات الواردة من الخادم
+        document.getElementById('score').innerHTML = `<i class="fas fa-chart-line"></i> نسبة التوافق: ${data.score}%`;
+        
+        // تحديث قسم التطابق
+        if (data.match_score !== undefined && data.match_score !== null) {
+          document.getElementById('match').innerHTML = `
+            <div class="section-title">
+              <i class="fas fa-percentage"></i> تطابق السيرة مع وصف الوظيفة
+            </div>
+            <div class="content">📊 نسبة التطابق: ${data.match_score}%</div>
+          `;
+        } else {
+          document.getElementById('match').innerHTML = '';
+        }
+        
+        // تحديث قسم التفاصيل
+        let detailsHtml = `
+          <div class="section-title">
+            <i class="fas fa-search"></i> تحليل التفاصيل
+          </div>
+          <strong>الكلمات المفتاحية:</strong>
+          <ul>
+        `;
+        data.details.found.forEach(k => detailsHtml += `<li class="found">${k}</li>`);
+        data.details.missing.forEach(k => detailsHtml += `<li class="missing">${k}</li>`);
+        detailsHtml += "</ul>";
+        document.getElementById('details').innerHTML = detailsHtml;
+        
+        // تحديث قسم الخطوط
+        if (data.fonts?.length) {
+          document.getElementById('fonts').innerHTML = `
+            <div class="section-title">
+              <i class="fas fa-font"></i> الخطوط المستخدمة
+            </div>
+            <div class="content">🔤 ${data.fonts.join(", ")}</div>
+          `;
+        } else {
+          document.getElementById('fonts').innerHTML = '';
+        }
+        
+        // تحديث قسم الملاحظات
+        if (data.notes?.length) {
+          let notesHtml = `
+            <div class="section-title">
+              <i class="fas fa-exclamation-triangle"></i> ملاحظات هامة
+            </div>
+            <ul>
+          `;
+          data.notes.forEach(n => notesHtml += `<li>${n}</li>`);
+          notesHtml += "</ul>";
+          document.getElementById('notes').innerHTML = notesHtml;
+        } else {
+          document.getElementById('notes').innerHTML = '';
+        }
+        
+        // تحديث قسم الاقتراحات
+        if (data.suggestions?.length) {
+          let suggestionsHtml = `
+            <div class="section-title">
+              <i class="fas fa-lightbulb"></i> اقتراحات لتحسين السيرة
+            </div>
+            <ul>
+          `;
+          data.suggestions.forEach(s => suggestionsHtml += `<li>${s}</li>`);
+          suggestionsHtml += "</ul>";
+          document.getElementById('suggestions').innerHTML = suggestionsHtml;
+        } else {
+          document.getElementById('suggestions').innerHTML = '';
+        }
+        
+      } catch (error) {
+        console.error('حدث خطأ أثناء التحليل:', error);
+        document.getElementById('score').innerHTML = `<i class="fas fa-exclamation-circle"></i> حدث خطأ أثناء التحليل`;
+        alert('حدث خطأ أثناء معالجة السيرة الذاتية. يرجى المحاولة مرة أخرى.');
+      }
     });
-
-    function updateUI(data) {
-      // Update score
-      document.getElementById('score').innerHTML = `<i class="fas fa-chart-line"></i> نسبة التوافق: ${data.score}`;
-      
-      // Update match section
-      document.getElementById('match').innerHTML = `
-        <div class="section-title">
-          <i class="fas fa-percentage"></i> تطابق السيرة مع وصف الوظيفة
-        </div>
-        <div class="content">📊 نسبة التطابق: ${data.match_score}</div>
-      `;
-      
-      // Update details section
-      let detailsHtml = `
-        <div class="section-title">
-          <i class="fas fa-search"></i> تحليل التفاصيل
-        </div>
-        <strong>الكلمات المفتاحية:</strong>
-        <ul>
-      `;
-      data.details.found.forEach(k => detailsHtml += `<li class="found">${k}</li>`);
-      data.details.missing.forEach(k => detailsHtml += `<li class="missing">${k}</li>`);
-      detailsHtml += "</ul>";
-      document.getElementById('details').innerHTML = detailsHtml;
-      
-      // Update fonts section
-      document.getElementById('fonts').innerHTML = `
-        <div class="section-title">
-          <i class="fas fa-font"></i> الخطوط المستخدمة
-        </div>
-        <div class="content">🔤 ${data.fonts.join(", ")}</div>
-      `;
-      
-      // Update notes section
-      let notesHtml = `
-        <div class="section-title">
-          <i class="fas fa-exclamation-triangle"></i> ملاحظات هامة
-        </div>
-        <ul>
-      `;
-      data.notes.forEach(n => notesHtml += `<li>${n}</li>`);
-      notesHtml += "</ul>";
-      document.getElementById('notes').innerHTML = notesHtml;
-      
-      // Update suggestions section
-      let suggestionsHtml = `
-        <div class="section-title">
-          <i class="fas fa-lightbulb"></i> اقتراحات لتحسين السيرة
-        </div>
-        <ul>
-      `;
-      data.suggestions.forEach(s => suggestionsHtml += `<li>${s}</li>`);
-      suggestionsHtml += "</ul>";
-      document.getElementById('suggestions').innerHTML = suggestionsHtml;
-    }
   </script>
 </body>
 </html>
