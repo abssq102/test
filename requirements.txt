@@ -1,4 +1,6 @@
-Flask
+flask
+flask-cors
 PyPDF2
 docx2txt
-flask-cors
+python-docx
+PyMuPDF

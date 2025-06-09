@@ -6,8 +6,21 @@ import docx2txt
 import re
 import os
 
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    fitz = None
+
+try:
+    import docx
+except ImportError:
+    docx = None
+
 app = Flask(__name__)
 CORS(app)
+
+UNSUPPORTED_FONTS = ['comic sans', 'brush script', 'curlz mt', 'papyrus']
+RECOMMENDED_FONTS = ['arial', 'calibri', 'times new roman']
 
 def extract_text(file_storage):
     filename = file_storage.filename.lower()
@@ -23,6 +36,37 @@ def extract_text(file_storage):
         return docx2txt.process(file_storage)
     else:
         return ""
+
+def detect_fonts(file_storage):
+    filename = file_storage.filename.lower()
+    fonts_found = set()
+
+    if filename.endswith(".pdf") and fitz:
+        try:
+            doc = fitz.open(stream=file_storage.read(), filetype="pdf")
+            for page in doc:
+                blocks = page.get_text("dict")["blocks"]
+                for b in blocks:
+                    for l in b.get("lines", []):
+                        for s in l.get("spans", []):
+                            font = s.get("font", "").lower()
+                            if font:
+                                fonts_found.add(font)
+        except Exception:
+            pass
+
+    elif filename.endswith(".docx") and docx:
+        try:
+            doc = docx.Document(file_storage)
+            for para in doc.paragraphs:
+                for run in para.runs:
+                    font_name = run.font.name
+                    if font_name:
+                        fonts_found.add(font_name.lower())
+        except Exception:
+            pass
+
+    return list(fonts_found)
 
 def analyze_text(text):
     notes = []
@@ -63,15 +107,6 @@ def analyze_text(text):
         notes.append("طول السيرة الذاتية كبير جدًا، يُفضل تقليصها.")
         suggestions.append("قلل من التفاصيل المكررة أو أدمج الوظائف المتشابهة.")
 
-    unsupported_fonts_keywords = ['comic sans', 'brush script', 'curlz mt', 'papyrus']
-    for font in unsupported_fonts_keywords:
-        if font in text_lower:
-            score -= 10
-            notes.append(f"تم استخدام خط غير مدعوم: {font}")
-            suggestions.append("استخدم خطوط احترافية مدعومة مثل Arial أو Calibri أو Times New Roman.")
-            break
-
-    # اقتراح حجم خط مثالي
     suggestions.append("يفضل أن يكون حجم الخط بين 10 و12 نقطة للقراءة المثالية في أنظمة ATS.")
 
     return max(score, 0), {'found': found, 'missing': missing}, notes, suggestions
@@ -79,8 +114,23 @@ def analyze_text(text):
 @app.route('/analyze', methods=['POST'])
 def analyze():
     uploaded_file = request.files['resume']
-    text = extract_text(uploaded_file)
+    file_storage_copy = uploaded_file.stream.read()
+    uploaded_file.stream.seek(0)
+
+    fonts_used = detect_fonts(uploaded_file.stream)
+    uploaded_file.stream.seek(0)
+
+    text = extract_text(uploaded_file.stream)
     score, details, notes, suggestions = analyze_text(text)
+
+    if fonts_used:
+        for font in fonts_used:
+            for bad in UNSUPPORTED_FONTS:
+                if bad in font:
+                    score -= 10
+                    notes.append(f"تم استخدام خط غير مدعوم: {font}")
+                    suggestions.append("استخدم خطوط احترافية مدعومة مثل Arial أو Calibri أو Times New Roman.")
+                    break
 
     job_description = request.form.get('job_description', '').lower()
     match_score = None
@@ -91,8 +141,9 @@ def analyze():
         match_score = round((len(common) / len(jd_words)) * 100) if jd_words else 0
 
     return jsonify({
-        'score': score,
+        'score': max(score, 0),
         'details': details,
+        'fonts': fonts_used,
         'notes': notes,
         'suggestions': suggestions,
         'match_score': match_score
