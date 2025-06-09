@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from PyPDF2 import PdfReader
 import docx2txt
 import re
 import os
 
 app = Flask(__name__)
+CORS(app)  # ✅ هذا يتيح الوصول من متصفحات أخرى
 
 def extract_text(file_storage):
     filename = file_storage.filename.lower()
