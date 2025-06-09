@@ -66,3 +66,21 @@ def analyze():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
+
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    uploaded_file = request.files['resume']
+    text = extract_text(uploaded_file)
+    score, details = analyze_text(text)
+
+    # مقارنة السيرة مع وصف الوظيفة إذا تم توفيره
+    job_description = request.form.get('job_description', '').lower()
+    match_score = None
+    if job_description:
+        resume_words = set(text.lower().split())
+        jd_words = set(job_description.split())
+        common = resume_words.intersection(jd_words)
+        match_score = round((len(common) / len(jd_words)) * 100) if jd_words else 0
+
+    return jsonify({'score': score, 'details': details, 'match_score': match_score})
