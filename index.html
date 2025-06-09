@@ -1,36 +1,166 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>تحقق من توافق سيرتك الذاتية مع نظام ATS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تحقق من توافق سيرتك الذاتية مع ATS</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 30px; background: #f9f9f9; direction: rtl; }
-    .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
-    h2 { color: #222; text-align: center; }
-    input, textarea, button { margin-top: 10px; width: 100%; padding: 10px; font-size: 14px; }
-    #score { font-size: 24px; font-weight: bold; color: green; margin-top: 20px; }
-    #details, #match, #fonts, #notes, #suggestions { margin-top: 15px; }
-    .found { color: green; }
-    .missing { color: red; }
-    li { margin-bottom: 5px; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      flex-direction: column;
+    }
+
+    .logo {
+      width: 200px;
+      margin-top: 30px;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    .container {
+      background: #ffffffee;
+      border-radius: 24px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+      padding: 30px 40px;
+      width: 90%;
+      max-width: 850px;
+      text-align: right;
+      animation: slideUp 0.8s ease-in-out;
+    }
+
+    h2 {
+      color: #2c3e50;
+      font-size: 26px;
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .upload-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: #ecf0f1;
+      border: 2px dashed #bdc3c7;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #34495e;
+      transition: all 0.3s;
+    }
+
+    .upload-label:hover {
+      background-color: #dce1e3;
+    }
+
+    .upload-label i {
+      font-style: normal;
+      font-weight: bold;
+      color: #2980b9;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      margin-top: 20px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+
+    .analyze-btn {
+      display: block;
+      margin: 20px auto 0;
+      padding: 8px 20px;
+      font-size: 13px;
+      background-color: #74ebd5;
+      background-image: linear-gradient(45deg, #74ebd5, #ACB6E5);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.3s, background 0.3s;
+    }
+
+    .analyze-btn:hover {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+
+    #score {
+      font-size: 22px;
+      color: #27ae60;
+      font-weight: bold;
+      margin-top: 25px;
+    }
+
+    .section {
+      margin-top: 18px;
+    }
+
+    .found { color: #2ecc71; }
+    .missing { color: #e74c3c; }
+
+    ul { padding-right: 20px; }
+    li { margin-bottom: 8px; line-height: 1.6; }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+      color: #fff;
+      background-color: transparent;
+      margin-top: 40px;
+      animation: fadeIn 1.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
+  <img class="logo" src="logo.png" alt="Logo">
   <div class="container">
     <h2>تحقق من توافق سيرتك الذاتية مع نظام ATS</h2>
     <form id="uploadForm">
-      <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
+      <label class="upload-label">
+        <i>⬆</i> رفع السيرة الذاتية
+        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
+      </label>
       <textarea id="jobDescription" rows="4" placeholder="ألصق وصف الوظيفة هنا للمقارنة... (اختياري)"></textarea>
-      <button type="submit">تحليل</button>
+      <button class="analyze-btn" type="submit">تحليل</button>
     </form>
+
     <div id="score"></div>
-    <div id="match"></div>
-    <div id="details"></div>
-    <div id="fonts"></div>
-    <div id="notes"></div>
-    <div id="suggestions"></div>
+    <div class="section" id="match"></div>
+    <div class="section" id="details"></div>
+    <div class="section" id="fonts"></div>
+    <div class="section" id="notes"></div>
+    <div class="section" id="suggestions"></div>
   </div>
+
+  <footer>
+    © 2025 مستند - جميع الحقوق محفوظة
+  </footer>
 
   <script>
     document.getElementById('uploadForm').addEventListener('submit', async function (e) {
@@ -67,7 +197,7 @@
       }
 
       if (data.fonts?.length) {
-        document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة في الملف: ${data.fonts.join(", ")}`;
+        document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة: ${data.fonts.join(", ")}`;
       } else {
         document.getElementById('fonts').innerHTML = '';
       }
@@ -79,7 +209,7 @@
       }
 
       if (data.suggestions?.length) {
-        document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات لتحسين السيرة:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
+        document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
       } else {
         document.getElementById('suggestions').innerHTML = '';
       }
