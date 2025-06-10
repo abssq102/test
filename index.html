@@ -32,10 +32,10 @@
     }
 
     .navbar img {
-      height: 22px;
+      height: 30px;
       background: white;
-      padding: 2px 8px;
-      border-radius: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
     }
 
     .logo {
@@ -154,10 +154,14 @@
     ul { padding-right: 20px; }
     li { margin-bottom: 8px; line-height: 1.6; }
 
-    .progress {
-      margin-top: 10px;
+    footer {
+      text-align: center;
+      padding: 20px;
       font-size: 13px;
-      color: #2980b9;
+      color: #fff;
+      background-color: transparent;
+      margin-top: 40px;
+      animation: fadeIn 1.5s ease-in;
     }
 
     @keyframes fadeIn {
@@ -184,7 +188,6 @@
           <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
         </label>
         <div class="filename" id="fileName"></div>
-        <div class="progress" id="uploadStatus"></div>
       </div>
       <textarea id="jobDescription" rows="4" placeholder="ألصق وصف الوظيفة هنا للمقارنة... (اختياري)"></textarea>
       <button class="analyze-btn" type="submit">تحليل</button>
@@ -198,18 +201,19 @@
     <div class="section" id="suggestions"></div>
   </div>
 
+  <footer>
+    © 2025 مستند - جميع الحقوق محفوظة
+  </footer>
+
   <script>
     const resumeInput = document.getElementById('resumeFile');
     const fileNameDisplay = document.getElementById('fileName');
-    const uploadStatus = document.getElementById('uploadStatus');
 
     resumeInput.addEventListener('change', () => {
       if (resumeInput.files.length) {
-        fileNameDisplay.textContent = 📄 تم اختيار الملف: ${resumeInput.files[0].name};
-        uploadStatus.textContent = "⏳ جاري تجهيز الملف للتحليل...";
+        fileNameDisplay.textContent = `📄 تم اختيار الملف: ${resumeInput.files[0].name}`;
       } else {
         fileNameDisplay.textContent = '';
-        uploadStatus.textContent = '';
       }
     });
 
@@ -223,7 +227,6 @@
       }
 
       document.getElementById('score').innerText = "⏳ جاري تحليل الملف...";
-      uploadStatus.textContent = "📊 جاري إرسال الملف للتحليل...";
 
       const formData = new FormData();
       formData.append("resume", fileInput.files[0]);
@@ -235,35 +238,34 @@
       });
 
       const data = await response.json();
-      document.getElementById('score').innerText = نسبة التوافق: ${data.score}%;
-      uploadStatus.textContent = "✅ التحليل اكتمل بنجاح";
+      document.getElementById('score').innerText = `نسبة التوافق: ${data.score}%`;
 
       let html = "<strong>تحليل التفاصيل:</strong><ul>";
-      data.details.found.forEach(k => html += <li class="found">✅ موجود: ${k}</li>);
-      data.details.missing.forEach(k => html += <li class="missing">❌ مفقود: ${k}</li>);
+      data.details.found.forEach(k => html += `<li class="found">✅ موجود: ${k}</li>`);
+      data.details.missing.forEach(k => html += `<li class="missing">❌ مفقود: ${k}</li>`);
       html += "</ul>";
       document.getElementById('details').innerHTML = html;
 
       if (data.match_score !== undefined && data.match_score !== null) {
-        document.getElementById('match').innerText = 📊 نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%;
+        document.getElementById('match').innerText = `📊 نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%`;
       } else {
         document.getElementById('match').innerText = '';
       }
 
       if (data.fonts?.length) {
-        document.getElementById('fonts').innerHTML = 🔤 الخطوط المستخدمة: ${data.fonts.join(", ")};
+        document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة: ${data.fonts.join(", ")}`;
       } else {
         document.getElementById('fonts').innerHTML = '';
       }
 
       if (data.notes?.length) {
-        document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات:</strong><ul>' + data.notes.map(n => <li>🔸 ${n}</li>).join('') + '</ul>';
+        document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات:</strong><ul>' + data.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>';
       } else {
         document.getElementById('notes').innerHTML = '';
       }
 
       if (data.suggestions?.length) {
-        document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات:</strong><ul>' + data.suggestions.map(s => <li>✅ ${s}</li>).join('') + '</ul>';
+        document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
       } else {
         document.getElementById('suggestions').innerHTML = '';
       }
