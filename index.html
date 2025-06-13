@@ -16,8 +16,8 @@
       margin: 0;
       padding: 0;
       min-height: 100vh;
-      /* تدرج لوني هادئ من ألوان الشعار */
-      background: linear-gradient(135deg, #e6f7fd 0%, #b4e0fa 40%, #a2b4fd 100%);
+      /* لون متدرج موحد للصفحة كلها */
+      background: linear-gradient(135deg, #e6f7fd 0%, #b4e0fa 100%);
       display: flex;
       flex-direction: column;
       font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
@@ -71,7 +71,6 @@
       word-spacing: 2px;
     }
 
-    /* Drag & Drop Area Styles */
     .drop-area {
       border: 2px dashed #d3dbe5;
       border-radius: 18px;
@@ -193,7 +192,6 @@
       margin: 24px auto 0;
       padding: 11px 30px;
       font-size: 15px;
-      /* نفس التدرج اللوني للزر كما في الشعار */
       background: linear-gradient(90deg, #36c0b7 0%, #227093 100%);
       color: #fff;
       border: none;
@@ -289,14 +287,12 @@
       padding: 16px 0 10px 0;
       font-size: 15px;
       color: #227093;
-      /* اجعل الخلفية شفافة أو تدرج خفيف جداً جداً */
       background: linear-gradient(90deg, #e6f7fd 0%, #b4e0fa 100%);
       font-weight: 600;
       animation: fadeIn 1.5s ease-in;
       letter-spacing: 1px;
       margin-top: auto;
       border-top: 1px solid #e3f6ff;
-      /* لو أردتها شفافة استبدل السطر السابق بـ background: transparent; */
     }
 
     @keyframes fadeIn {
