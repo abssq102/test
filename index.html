@@ -17,7 +17,7 @@
       padding: 0;
       min-height: 100vh;
       background-color: #fff;
-      /* باترن نقاط رمادية فاتحة */
+      /* باترن نقاط رمادية */
       background-image:
         radial-gradient(circle, #e5e7ea 1.2px, transparent 1.2px),
         radial-gradient(circle, #e5e7ea 1.2px, transparent 1.2px);
@@ -195,7 +195,7 @@
       display: block;
       margin: 24px auto 0;
       padding: 12px 38px;
-      font-size: 15px;
+      font-size: 16px;
       background: linear-gradient(90deg, #2ec8d1 0%, #2270b9 100%);
       color: #fff;
       border: none;
@@ -300,6 +300,68 @@
       border-top: 1px solid #e3f6ff;
     }
 
+    /* نافذة الرمز السري */
+    #passwordModal {
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #passwordModal .box {
+      background: #f7f7f7;
+      border-radius: 16px;
+      box-shadow: 0 6px 32px #0001;
+      padding: 36px 32px 26px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      min-width: 280px;
+    }
+    #passwordModal h3 {
+      color: #227093;
+      margin: 0 0 22px 0;
+      font-family: 'Cairo',sans-serif;
+      font-size: 22px;
+    }
+    #secretCodeInput {
+      font-size: 18px;
+      text-align: center;
+      letter-spacing: 6px;
+      padding: 13px 18px;
+      border-radius: 10px;
+      border: 1.5px solid #bbb;
+      outline: none;
+      width: 160px;
+      background: #fff;
+    }
+    #codeBtn {
+      margin-top: 15px;
+      background: linear-gradient(90deg,#2ec8d1 0%,#2270b9 100%);
+      color: #fff;
+      padding: 10px 38px;
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px #22709318;
+      transition: background 0.3s;
+    }
+    #codeBtn:hover {
+      background: linear-gradient(90deg,#2270b9 0%,#2ec8d1 100%);
+    }
+    #codeError {
+      color: #e74c3c;
+      font-size: 15px;
+      min-height: 22px;
+      text-align: center;
+    }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -318,12 +380,23 @@
       .choose-btn { font-size: 15px; min-width: 85px; padding: 7px 8px;}
       textarea { font-size: 13px; }
       .filename.active { padding: 18px 12px; font-size: 15px;}
+      #passwordModal .box { min-width: 85vw; }
+      #secretCodeInput { width: 96vw; max-width: 170px;}
     }
   </style>
 </head>
 <body>
   <div class="navbar">
     <img src="logo.png" alt="Logo">
+  </div>
+  <!-- نافذة كلمة السر -->
+  <div id="passwordModal">
+    <div class="box">
+      <h3>دخول برمز سري</h3>
+      <input type="password" id="secretCodeInput" maxlength="4" pattern="\d{4}" placeholder="أدخل الرقم السري (٤ أرقام)" autofocus>
+      <button id="codeBtn">دخول</button>
+      <div id="codeError"></div>
+    </div>
   </div>
   <div class="container">
     <h2>تحقق من توافق سيرتك الذاتية مع نظام ATS</h2>
@@ -362,6 +435,29 @@
     © 2025 مستند - جميع الحقوق محفوظة
   </footer>
   <script>
+    // حماية الصفحة بكود سري (غير باك اند)
+    // يمكنك تغيير الرقم السري من هنا:
+    const ADMIN_SECRET_CODE = "1234";
+    const modal = document.getElementById('passwordModal');
+    const input = document.getElementById('secretCodeInput');
+    const btn = document.getElementById('codeBtn');
+    const error = document.getElementById('codeError');
+
+    function checkCode() {
+      if (input.value === ADMIN_SECRET_CODE) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      } else {
+        error.textContent = "رمز غير صحيح!";
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    btn.onclick = checkCode;
+    input.onkeydown = (e) => { if (e.key === "Enter") checkCode(); };
+    window.onload = () => { input.focus(); document.body.style.overflow='hidden'; };
+
     // Drag & Drop Logic
     const dropArea = document.getElementById('drop-area');
     const fileInput = document.getElementById('resumeFile');
