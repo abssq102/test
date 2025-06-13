@@ -92,6 +92,13 @@
     .icon-wrapper {
       margin-top: 18px;
       margin-bottom: 8px;
+      transition: opacity 0.3s;
+    }
+    .icon-wrapper.hide {
+      opacity: 0;
+      pointer-events: none;
+      height: 0;
+      margin: 0;
     }
     .drop-text {
       color: #bbc4ce;
@@ -100,6 +107,13 @@
       margin-top: 7px;
       font-weight: 600;
       user-select: none;
+      transition: opacity 0.3s;
+    }
+    .drop-text.hide {
+      opacity: 0;
+      pointer-events: none;
+      height: 0;
+      margin: 0;
     }
     .choose-btn {
       background: #fff;
@@ -111,24 +125,36 @@
       font-weight: 700;
       cursor: pointer;
       margin-bottom: 18px;
-      transition: background 0.2s, border 0.2s;
+      transition: background 0.2s, border 0.2s, opacity 0.3s;
       box-shadow: 0 2px 6px rgba(52,152,219,0.04);
       display: inline-block;
       text-align: center;
     }
-    .choose-btn:hover {
-      background: #f6fcfc;
-      border-color: #38ada9;
+    .choose-btn.hide {
+      opacity: 0;
+      pointer-events: none;
+      height: 0;
+      margin: 0;
     }
     .filename {
       margin-top: 0px;
-      font-size: 14px;
-      color: #2d3436;
+      font-size: 18px;
+      color: #fff;
+      background: #555;
+      border-radius: 30px;
+      padding: 32px 48px;
       text-align: center;
       word-break: break-all;
       min-height: 24px;
       margin-bottom: 6px;
       font-family: inherit;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .filename.active {
+      display: flex;
+      animation: fadeIn 0.6s;
     }
 
     input[type="file"] {
@@ -278,6 +304,7 @@
       .icon-wrapper { margin-top: 8px; }
       .choose-btn { font-size: 15px; min-width: 85px; padding: 7px 8px;}
       textarea { font-size: 13px; }
+      .filename.active { padding: 18px 12px; font-size: 15px;}
     }
   </style>
 </head>
@@ -289,15 +316,15 @@
     <h2>تحقق من توافق سيرتك الذاتية مع نظام ATS</h2>
     <form id="uploadForm">
       <div class="drop-area" id="drop-area">
-        <div class="icon-wrapper">
+        <div class="icon-wrapper" id="iconWrapper">
           <svg width="56" height="56" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="28" cy="28" r="27" stroke="#ddd" stroke-width="2"/>
             <path d="M28 38V18" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
             <path d="M22 24l6-6 6 6" stroke="#bbb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <div class="drop-text">اسحب الملف هنا أو</div>
-        <label class="choose-btn">
+        <div class="drop-text" id="dropText">اسحب الملف هنا أو</div>
+        <label class="choose-btn" id="chooseBtn">
           اختيار ملف
           <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.rtf,.txt" hidden>
         </label>
@@ -326,6 +353,9 @@
     const dropArea = document.getElementById('drop-area');
     const fileInput = document.getElementById('resumeFile');
     const fileNameDisplay = document.getElementById('fileName');
+    const iconWrapper = document.getElementById('iconWrapper');
+    const dropText = document.getElementById('dropText');
+    const chooseBtn = document.getElementById('chooseBtn');
 
     dropArea.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -347,9 +377,17 @@
 
     function showFileName() {
       if (fileInput.files.length) {
-        fileNameDisplay.textContent = `📄 ${fileInput.files[0].name}`;
+        fileNameDisplay.textContent = fileInput.files[0].name;
+        fileNameDisplay.classList.add('active');
+        iconWrapper.classList.add('hide');
+        dropText.classList.add('hide');
+        chooseBtn.classList.add('hide');
       } else {
         fileNameDisplay.textContent = '';
+        fileNameDisplay.classList.remove('active');
+        iconWrapper.classList.remove('hide');
+        dropText.classList.remove('hide');
+        chooseBtn.classList.remove('hide');
       }
     }
 
