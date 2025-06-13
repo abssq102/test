@@ -12,17 +12,17 @@
       height: 100%;
       min-height: 100vh;
     }
-   body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  /* تدرج لوني هادئ من ألوان الشعار */
-  background: linear-gradient(135deg, #e6f7fd 0%, #b4e0fa 40%, #a2b4fd 100%);
-  display: flex;
-  flex-direction: column;
-  font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
-  overflow-x: hidden;
-}
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      /* تدرج لوني هادئ من ألوان الشعار */
+      background: linear-gradient(135deg, #e6f7fd 0%, #b4e0fa 40%, #a2b4fd 100%);
+      display: flex;
+      flex-direction: column;
+      font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
+    }
 
     .navbar {
       position: fixed;
@@ -193,7 +193,8 @@
       margin: 24px auto 0;
       padding: 11px 30px;
       font-size: 15px;
-      background: linear-gradient(90deg, #38ada9 0%, #227093 100%);
+      /* نفس التدرج اللوني للزر كما في الشعار */
+      background: linear-gradient(90deg, #36c0b7 0%, #227093 100%);
       color: #fff;
       border: none;
       border-radius: 12px;
@@ -204,7 +205,7 @@
       transition: background 0.3s, transform 0.2s;
     }
     .analyze-btn:hover {
-      background: linear-gradient(90deg, #227093 0%, #38ada9 100%);
+      background: linear-gradient(90deg, #227093 0%, #36c0b7 100%);
       transform: scale(1.04);
     }
 
@@ -288,11 +289,14 @@
       padding: 16px 0 10px 0;
       font-size: 15px;
       color: #227093;
-      background: transparent;
+      /* اجعل الخلفية شفافة أو تدرج خفيف جداً جداً */
+      background: linear-gradient(90deg, #e6f7fd 0%, #b4e0fa 100%);
       font-weight: 600;
       animation: fadeIn 1.5s ease-in;
       letter-spacing: 1px;
       margin-top: auto;
+      border-top: 1px solid #e3f6ff;
+      /* لو أردتها شفافة استبدل السطر السابق بـ background: transparent; */
     }
 
     @keyframes fadeIn {
