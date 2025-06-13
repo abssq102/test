@@ -151,10 +151,17 @@
       display: none;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
     }
     .filename.active {
       display: flex;
       animation: fadeIn 0.6s;
+    }
+    .filename.active:hover {
+      background: #353535;
+      color: #f3f3f3;
+      text-decoration: underline;
     }
 
     input[type="file"] {
@@ -374,6 +381,12 @@
       }
     });
     fileInput.addEventListener('change', showFileName);
+
+    // السماح باختيار ملف جديد عند الضغط على اسم الملف
+    fileNameDisplay.addEventListener('click', () => {
+      fileInput.value = ""; // إعادة التهيئة للسماح برفع نفس الاسم إن لزم
+      fileInput.click();
+    });
 
     function showFileName() {
       if (fileInput.files.length) {
