@@ -167,6 +167,7 @@ class ATSAnalyzer:
 
     def _analyze_pdf_structure(self, file_storage):
         """تحليل هيكل PDF بطريقة متقدمة"""
+        file_storage.seek(0)
         doc = fitz.open(stream=file_storage.read(), filetype="pdf")
         tables = 0
         images = 0
@@ -177,7 +178,9 @@ class ATSAnalyzer:
             images += len(page.get_images(full=True))
             
             # كشف الجداول بطريقة أكثر دقة
-            tables += len(page.find_tables())
+            table_finder = page.find_tables()
+            # تعديل هنا: استخدام table_finder.tables
+            tables += len(getattr(table_finder, "tables", []))
             
             # كشف الأعمدة
             text_dict = page.get_text("dict")
@@ -419,6 +422,36 @@ class ATSAnalyzer:
             'priority_fixes': critical_issues[:3]  # أهم 3 مشاكل
         }
 
+    def detect_fonts_enhanced(self, file_storage):
+        """كشف خطوط محسن"""
+        fonts = set()
+        filename = file_storage.filename.lower()
+        file_storage.seek(0)
+        
+        try:
+            if filename.endswith(".pdf"):
+                doc = fitz.open(stream=file_storage.read(), filetype="pdf")
+                for page in doc:
+                    blocks = page.get_text("dict").get("blocks", [])
+                    for block in blocks:
+                        for line in block.get("lines", []):
+                            for span in line.get("spans", []):
+                                font_name = span.get("font", "")
+                                if font_name:
+                                    fonts.add(font_name)
+                doc.close()
+                
+            elif filename.endswith(".docx"):
+                doc = docx.Document(file_storage)
+                for paragraph in doc.paragraphs:
+                    for run in paragraph.runs:
+                        if run.font.name:
+                            fonts.add(run.font.name)
+                            
+        except Exception as e:
+            logger.error(f"خطأ في كشف الخطوط: {str(e)}")
+        
+        return list(fonts)
 
 # إنشاء كائن المحلل
 analyzer = ATSAnalyzer()
@@ -489,41 +522,6 @@ def analyze():
             'error': 'حدث خطأ في معالجة الملف',
             'details': str(e)
         }), 500
-
-# إضافة method لكشف الخطوط المحسن
-def detect_fonts_enhanced(self, file_storage):
-    """كشف خطوط محسن"""
-    fonts = set()
-    filename = file_storage.filename.lower()
-    file_storage.seek(0)
-    
-    try:
-        if filename.endswith(".pdf"):
-            doc = fitz.open(stream=file_storage.read(), filetype="pdf")
-            for page in doc:
-                blocks = page.get_text("dict").get("blocks", [])
-                for block in blocks:
-                    for line in block.get("lines", []):
-                        for span in line.get("spans", []):
-                            font_name = span.get("font", "")
-                            if font_name:
-                                fonts.add(font_name)
-            doc.close()
-            
-        elif filename.endswith(".docx"):
-            doc = docx.Document(file_storage)
-            for paragraph in doc.paragraphs:
-                for run in paragraph.runs:
-                    if run.font.name:
-                        fonts.add(run.font.name)
-                        
-    except Exception as e:
-        logger.error(f"خطأ في كشف الخطوط: {str(e)}")
-    
-    return list(fonts)
-
-# إضافة الmethod للكلاس
-ATSAnalyzer.detect_fonts_enhanced = detect_fonts_enhanced
 
 @app.route('/health', methods=['GET'])
 def health_check():
