@@ -8,14 +8,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
+    html, body {
+      height: 100%;
+      min-height: 100vh;
+    }
     body {
       margin: 0;
       padding: 0;
       min-height: 100vh;
       background: linear-gradient(120deg, #74ebd5 0%, #ACB6E5 100%);
       display: flex;
-      justify-content: center;
-      align-items: center;
+      flex-direction: column;
       font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
       overflow-x: hidden;
     }
@@ -43,6 +46,7 @@
     }
 
     .container {
+      flex: 1 0 auto;
       background: #fff;
       border-radius: 28px;
       box-shadow: 0 10px 40px rgba(52, 152, 219, 0.09);
@@ -53,6 +57,7 @@
       margin-bottom: 40px;
       animation: slideUp 0.7s cubic-bezier(.77,.01,.29,.99);
       position: relative;
+      align-self: center;
     }
 
     h2 {
@@ -225,15 +230,17 @@
     }
 
     footer {
+      flex-shrink: 0;
+      width: 100%;
       text-align: center;
-      padding: 24px 0 8px 0;
+      padding: 16px 0 10px 0;
       font-size: 15px;
       color: #227093;
       background: transparent;
-      margin-top: 35px;
       font-weight: 600;
       animation: fadeIn 1.5s ease-in;
       letter-spacing: 1px;
+      margin-top: auto;
     }
 
     @keyframes fadeIn {
