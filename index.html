@@ -4,17 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تحقق من توافق سيرتك الذاتية مع ATS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(120deg, #74ebd5 0%, #ACB6E5 100%);
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      flex-direction: column;
+      font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
     }
 
     .navbar {
@@ -22,156 +25,232 @@
       top: 0;
       right: 0;
       left: 0;
-      background: white;
-      padding: 10px 20px;
+      background: #fff;
+      padding: 10px 0;
+      box-shadow: 0 2px 16px rgba(44, 62, 80, 0.05);
       display: flex;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      z-index: 999;
+      z-index: 100;
+      transition: box-shadow 0.3s;
     }
-
     .navbar img {
-      height: 30px;
-      background: white;
-      padding: 4px 10px;
-      border-radius: 8px;
-    }
-
-    .logo {
-      width: 200px;
-      margin-top: 90px;
-      animation: fadeIn 1s ease-in-out;
+      height: 38px;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 1px 6px rgba(180, 180, 180, 0.09);
+      padding: 4px 12px;
     }
 
     .container {
-      background: #ffffffee;
-      border-radius: 24px;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
-      padding: 30px 40px;
-      width: 90%;
-      max-width: 850px;
-      text-align: right;
-      animation: slideUp 0.8s ease-in-out;
-      margin-top: 20px;
+      background: #fff;
+      border-radius: 28px;
+      box-shadow: 0 10px 40px rgba(52, 152, 219, 0.09);
+      padding: 44px 28px 36px 28px;
+      width: 98%;
+      max-width: 530px;
+      margin-top: 60px;
+      margin-bottom: 40px;
+      animation: slideUp 0.7s cubic-bezier(.77,.01,.29,.99);
+      position: relative;
     }
 
     h2 {
-      color: #2c3e50;
-      font-size: 26px;
-      margin-bottom: 25px;
+      color: #227093;
+      font-size: 28px;
+      margin-bottom: 32px;
       text-align: center;
+      font-weight: 800;
+      letter-spacing: 1px;
+      word-spacing: 2px;
     }
 
     .upload-wrapper {
       display: flex;
-      justify-content: center;
-      margin-bottom: 10px;
       flex-direction: column;
       align-items: center;
+      margin-bottom: 16px;
     }
 
     .upload-label {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 8px;
-      background-color: #ecf0f1;
-      border: 2px dashed #bdc3c7;
-      padding: 10px 16px;
-      border-radius: 50px;
+      gap: 10px;
+      background: linear-gradient(90deg, #f5f7fa 0%, #c3cfe2 100%);
+      border: 2px dashed #9ad0ec;
+      color: #227093;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 42px;
+      padding: 13px 32px;
       cursor: pointer;
-      font-size: 14px;
-      color: #34495e;
-      transition: all 0.3s;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      transition: all 0.25s;
+      box-shadow: 0 2px 10px rgba(52, 152, 219, 0.03);
+      min-width: 220px;
+      justify-content: center;
     }
-
     .upload-label:hover {
-      background-color: #dce1e3;
+      background: linear-gradient(90deg, #e0ecfc 0%, #b8d8eb 100%);
+      border-color: #227093;
+      color: #227093;
     }
-
     .upload-label i {
       font-style: normal;
       font-weight: bold;
-      color: #2980b9;
-      font-size: 18px;
+      color: #38ada9;
+      font-size: 22px;
+      margin-left: 2px;
     }
-
     .filename {
-      margin-top: 8px;
-      font-size: 13px;
-      color: #2c3e50;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #2d3436;
+      text-align: center;
+      word-break: break-all;
     }
-
     input[type="file"] {
       display: none;
     }
 
     textarea {
       width: 100%;
-      padding: 10px;
-      font-size: 14px;
-      margin-top: 20px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
+      padding: 12px;
+      font-size: 15px;
+      margin-top: 18px;
+      border-radius: 12px;
+      border: 1.5px solid #d0e6f6;
       box-sizing: border-box;
+      background: #f6fbff;
       resize: vertical;
+      min-height: 48px;
+      outline: none;
+      transition: border 0.25s;
+    }
+    textarea:focus {
+      border: 1.5px solid #227093;
+      background: #e5f0fb;
     }
 
     .analyze-btn {
       display: block;
-      margin: 20px auto 0;
-      padding: 8px 20px;
-      font-size: 13px;
-      background-color: #74ebd5;
-      background-image: linear-gradient(45deg, #74ebd5, #ACB6E5);
+      margin: 24px auto 0;
+      padding: 11px 30px;
+      font-size: 15px;
+      background: linear-gradient(90deg, #38ada9 0%, #227093 100%);
       color: #fff;
       border: none;
-      border-radius: 8px;
+      border-radius: 12px;
       cursor: pointer;
-      transition: transform 0.3s, background 0.3s;
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(44, 62, 80, 0.06);
+      letter-spacing: 0.8px;
+      transition: background 0.3s, transform 0.2s;
     }
-
     .analyze-btn:hover {
-      opacity: 0.9;
-      transform: scale(1.05);
+      background: linear-gradient(90deg, #227093 0%, #38ada9 100%);
+      transform: scale(1.04);
     }
 
     #score {
-      font-size: 22px;
-      color: #27ae60;
-      font-weight: bold;
-      margin-top: 25px;
+      font-size: 23px;
+      color: #1abc9c;
+      font-weight: 700;
+      margin-top: 26px;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    #progress {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px 0 8px 0;
+    }
+    #progressBar {
+      width: 100%;
+      height: 13px;
+      border-radius: 8px;
+      background: #e3f6ff;
+      box-shadow: 0 1px 4px rgba(44, 62, 80, 0.04);
+      accent-color: #38ada9;
     }
 
     .section {
+      margin: 20px 0 0 0;
+      padding: 0 4px;
+    }
+
+    .found {
+      color: #30b04a;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .missing {
+      color: #e74c3c;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    ul {
+      padding-right: 22px;
+      margin: 0;
+    }
+    li {
+      margin-bottom: 7px;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    #fonts, #notes, #suggestions, #tables-images, #sections {
+      font-size: 15px;
+      background: #f8fafd;
+      border-radius: 10px;
+      padding: 12px 15px;
+      margin-top: 10px;
+      box-shadow: 0 1px 8px rgba(44, 62, 80, 0.02);
+      border: 1px solid #e4ecf4;
+    }
+
+    #fonts strong, #notes strong, #suggestions strong, #tables-images strong, #sections strong {
+      color: #227093;
+      font-size: 15.5px;
+      font-weight: 700;
+    }
+
+    #match {
+      font-size: 17px;
+      color: #227093;
+      font-weight: 600;
+      letter-spacing: 0.6px;
       margin-top: 18px;
     }
 
-    .found { color: #2ecc71; }
-    .missing { color: #e74c3c; }
-
-    ul { padding-right: 20px; }
-    li { margin-bottom: 8px; line-height: 1.6; }
-
     footer {
       text-align: center;
-      padding: 20px;
-      font-size: 13px;
-      color: #fff;
-      background-color: transparent;
-      margin-top: 40px;
+      padding: 24px 0 8px 0;
+      font-size: 15px;
+      color: #227093;
+      background: transparent;
+      margin-top: 35px;
+      font-weight: 600;
       animation: fadeIn 1.5s ease-in;
+      letter-spacing: 1px;
     }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(40px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+
+    @media (max-width: 600px) {
+      .container { max-width: 99%; padding: 18px 3vw 18px 3vw; }
+      h2 { font-size: 21px; }
+      .navbar img { height: 28px; }
+      .upload-label { font-size: 15px; min-width: 120px; padding: 8px 12px;}
+      textarea { font-size: 13px; }
     }
   </style>
 </head>
@@ -205,15 +284,12 @@
     <div class="section" id="suggestions"></div>
     <div class="section" id="tables-images"></div>
   </div>
-
   <footer>
     © 2025 مستند - جميع الحقوق محفوظة
   </footer>
-
   <script>
     const resumeInput = document.getElementById('resumeFile');
     const fileNameDisplay = document.getElementById('fileName');
-
     resumeInput.addEventListener('change', () => {
       if (resumeInput.files.length) {
         fileNameDisplay.textContent = `📄 تم اختيار الملف: ${resumeInput.files[0].name}`;
@@ -221,7 +297,6 @@
         fileNameDisplay.textContent = '';
       }
     });
-
     document.getElementById('uploadForm').addEventListener('submit', async function (e) {
       e.preventDefault();
       const fileInput = document.getElementById('resumeFile');
@@ -257,7 +332,6 @@
         html += "</ul>";
         document.getElementById('details').innerHTML = html;
 
-        // تقييم أقسام السيرة الذاتية منفصل
         let sectionsHTML = "<strong>تقييم كل قسم:</strong><ul>";
         for (const [section, val] of Object.entries(data.details.sections)) {
           sectionsHTML += `<li>${section}: <b>${val}%</b></li>`;
@@ -289,7 +363,6 @@
           document.getElementById('suggestions').innerHTML = '';
         }
 
-        // تحذيرات الجداول/الصور
         document.getElementById('tables-images').innerHTML = '';
         if ((data.tables && data.tables > 0) || (data.images && data.images > 0)) {
           let war = `<strong>تحذيرات رسوميات أو جداول:</strong><ul>`;
@@ -298,7 +371,6 @@
           war += "</ul>";
           document.getElementById('tables-images').innerHTML = war;
         }
-
       } catch (err) {
         document.getElementById('progress').style.display = "none";
         document.getElementById('score').innerText = "حدث خطأ أثناء تحليل السيرة الذاتية!";
