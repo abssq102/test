@@ -132,28 +132,28 @@ def detect_fonts(file_storage):
 
 # تحليل التوصيات بناءً على الخط والحجم والجداول/الصور
 def suggest_improvements(text, fonts, tables, images):
-    suggestions = []
+    suggestions = set() # استخدم set بدلاً من list
     notes = []
 
     ats_safe_fonts = {"Arial", "Calibri", "Times New Roman", "Georgia", "Helvetica"}
     for font in fonts:
         if font and font not in ats_safe_fonts:
             notes.append(f"الخط '{font}' قد لا يكون مدعومًا في أنظمة ATS.")
-            suggestions.append("استخدم خطوط مثل Arial أو Calibri لضمان التوافق.")
+            suggestions.add("استخدم خطوط مثل Arial أو Calibri لضمان التوافق.") # استخدم add بدل append
 
     words = len(text.split())
     if words < 100:
         notes.append("السيرة قصيرة جدًا وقد لا توضح خبراتك.")
     if re.search(r'(font-size:\s*\d+pt)', text.lower()):
         pt_size = int(re.findall(r'font-size:\s*(\d+)pt', text.lower())[0])
-        if pt_size < 10 or pt_size > 14:
-            suggestions.append("يفضل أن يكون حجم الخط بين 10 و 12 نقطة للقراءة المثالية في أنظمة ATS.")
+        if pt_size < 10 أو pt_size > 14:
+            suggestions.add("يفضل أن يكون حجم الخط بين 10 و 12 نقطة للقراءة المثالية في أنظمة ATS.")
     if tables > 0:
         notes.append(f"تم اكتشاف {tables} جدول في الملف، وهذا قد يسبب مشاكل لبعض أنظمة ATS.")
     if images > 0:
         notes.append(f"تم اكتشاف {images} صورة/عنصر رسومي في الملف، ويفضل تجنب الصور.")
 
-    return notes, suggestions
+    return notes, list(suggestions) # حول set إلى list قبل الإرجاع
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
