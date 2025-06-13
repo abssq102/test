@@ -185,7 +185,7 @@
       <div class="upload-wrapper">
         <label class="upload-label">
           <i>📤</i> رفع السيرة الذاتية
-          <input type="file" id="resumeFile" accept=".pdf,.doc,.docx">
+          <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.rtf,.txt">
         </label>
         <div class="filename" id="fileName"></div>
       </div>
@@ -194,11 +194,16 @@
     </form>
 
     <div id="score"></div>
+    <div id="progress" style="display:none;margin:12px 0;">
+      <progress id="progressBar" value="0" max="100" style="width:100%;"></progress>
+    </div>
     <div class="section" id="match"></div>
     <div class="section" id="details"></div>
+    <div class="section" id="sections"></div>
     <div class="section" id="fonts"></div>
     <div class="section" id="notes"></div>
     <div class="section" id="suggestions"></div>
+    <div class="section" id="tables-images"></div>
   </div>
 
   <footer>
@@ -221,53 +226,82 @@
       e.preventDefault();
       const fileInput = document.getElementById('resumeFile');
       const jobDescription = document.getElementById('jobDescription').value.trim();
+
       if (!fileInput.files.length) {
         alert("يرجى اختيار ملف السيرة الذاتية");
         return;
       }
 
+      document.getElementById('progress').style.display = "block";
+      document.getElementById('progressBar').value = 20;
       document.getElementById('score').innerText = "⏳ جاري تحليل الملف...";
 
       const formData = new FormData();
       formData.append("resume", fileInput.files[0]);
       formData.append("job_description", jobDescription);
 
-      const response = await fetch("https://test-ygja.onrender.com/analyze", {
-        method: "POST",
-        body: formData
-      });
+      try {
+        const response = await fetch("https://test-ygja.onrender.com/analyze", {
+          method: "POST",
+          body: formData
+        });
+        document.getElementById('progressBar').value = 70;
+        const data = await response.json();
+        document.getElementById('progressBar').value = 100;
+        document.getElementById('progress').style.display = "none";
+        document.getElementById('score').innerText = `نسبة التوافق: ${data.score}%`;
 
-      const data = await response.json();
-      document.getElementById('score').innerText = `نسبة التوافق: ${data.score}%`;
+        let html = "<strong>تحليل التفاصيل:</strong><ul>";
+        data.details.found.forEach(k => html += `<li class="found">✅ موجود: ${k}</li>`);
+        data.details.missing.forEach(k => html += `<li class="missing">❌ مفقود: ${k}</li>`);
+        html += "</ul>";
+        document.getElementById('details').innerHTML = html;
 
-      let html = "<strong>تحليل التفاصيل:</strong><ul>";
-      data.details.found.forEach(k => html += `<li class="found">✅ موجود: ${k}</li>`);
-      data.details.missing.forEach(k => html += `<li class="missing">❌ مفقود: ${k}</li>`);
-      html += "</ul>";
-      document.getElementById('details').innerHTML = html;
+        // تقييم أقسام السيرة الذاتية منفصل
+        let sectionsHTML = "<strong>تقييم كل قسم:</strong><ul>";
+        for (const [section, val] of Object.entries(data.details.sections)) {
+          sectionsHTML += `<li>${section}: <b>${val}%</b></li>`;
+        }
+        sectionsHTML += "</ul>";
+        document.getElementById('sections').innerHTML = sectionsHTML;
 
-      if (data.match_score !== undefined && data.match_score !== null) {
-        document.getElementById('match').innerText = `📊 نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%`;
-      } else {
-        document.getElementById('match').innerText = '';
-      }
+        if (data.match_score !== undefined && data.match_score !== null) {
+          document.getElementById('match').innerText = `📊 نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%`;
+        } else {
+          document.getElementById('match').innerText = '';
+        }
 
-      if (data.fonts?.length) {
-        document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة: ${data.fonts.join(", ")}`;
-      } else {
-        document.getElementById('fonts').innerHTML = '';
-      }
+        if (data.fonts?.length) {
+          document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة: ${data.fonts.join(", ")}`;
+        } else {
+          document.getElementById('fonts').innerHTML = '';
+        }
 
-      if (data.notes?.length) {
-        document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات:</strong><ul>' + data.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>';
-      } else {
-        document.getElementById('notes').innerHTML = '';
-      }
+        if (data.notes?.length) {
+          document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات:</strong><ul>' + data.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>';
+        } else {
+          document.getElementById('notes').innerHTML = '';
+        }
 
-      if (data.suggestions?.length) {
-        document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
-      } else {
-        document.getElementById('suggestions').innerHTML = '';
+        if (data.suggestions?.length) {
+          document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
+        } else {
+          document.getElementById('suggestions').innerHTML = '';
+        }
+
+        // تحذيرات الجداول/الصور
+        document.getElementById('tables-images').innerHTML = '';
+        if ((data.tables && data.tables > 0) || (data.images && data.images > 0)) {
+          let war = `<strong>تحذيرات رسوميات أو جداول:</strong><ul>`;
+          if (data.tables > 0) war += `<li>⚠️ تم اكتشاف ${data.tables} جدول</li>`;
+          if (data.images > 0) war += `<li>⚠️ تم اكتشاف ${data.images} صورة/عنصر رسومي</li>`;
+          war += "</ul>";
+          document.getElementById('tables-images').innerHTML = war;
+        }
+
+      } catch (err) {
+        document.getElementById('progress').style.display = "none";
+        document.getElementById('score').innerText = "حدث خطأ أثناء تحليل السيرة الذاتية!";
       }
     });
   </script>
