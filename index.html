@@ -16,7 +16,13 @@
       margin: 0;
       padding: 0;
       min-height: 100vh;
-      background: #fff;
+      background-color: #fff;
+      /* باترن نقاط رمادية فاتحة */
+      background-image:
+        radial-gradient(circle, #e5e7ea 1.2px, transparent 1.2px),
+        radial-gradient(circle, #e5e7ea 1.2px, transparent 1.2px);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
       display: flex;
       flex-direction: column;
       font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
@@ -35,7 +41,6 @@
       justify-content: center;
       align-items: center;
       z-index: 100;
-      transition: box-shadow 0.3s;
     }
     .navbar img {
       height: 38px;
@@ -47,9 +52,9 @@
 
     .container {
       flex: 1 0 auto;
-      background: #f6f7fa;
+      background: #fff;
       border-radius: 28px;
-      box-shadow: 0 10px 40px rgba(52, 152, 219, 0.09);
+      box-shadow: 0 10px 40px rgba(52, 152, 219, 0.08);
       padding: 44px 28px 36px 28px;
       width: 98%;
       max-width: 530px;
@@ -189,21 +194,22 @@
     .analyze-btn {
       display: block;
       margin: 24px auto 0;
-      padding: 11px 30px;
+      padding: 12px 38px;
       font-size: 15px;
-      background: linear-gradient(90deg, #36c0b7 0%, #227093 100%);
+      background: linear-gradient(90deg, #2ec8d1 0%, #2270b9 100%);
       color: #fff;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       cursor: pointer;
       font-weight: 700;
-      box-shadow: 0 2px 10px rgba(44, 62, 80, 0.06);
-      letter-spacing: 0.8px;
+      box-shadow: 0 2px 10px rgba(44, 62, 80, 0.09);
+      letter-spacing: 1px;
       transition: background 0.3s, transform 0.2s;
+      outline: none;
     }
     .analyze-btn:hover {
-      background: linear-gradient(90deg, #227093 0%, #36c0b7 100%);
-      transform: scale(1.04);
+      background: linear-gradient(90deg, #2270b9 0%, #2ec8d1 100%);
+      transform: scale(1.045);
     }
 
     #score {
