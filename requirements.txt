@@ -1,25 +1,8 @@
-
-# Flask والمكتبات الأساسية
-flask==2.3.3
-flask-cors==4.0.0
-
-# معالجة ملفات PDF
-PyPDF2==3.0.1
-PyMuPDF==1.23.5
-
-# معالجة ملفات Word
-docx2txt==0.8
-python-docx==0.8.11
-
-# معالجة ملفات RTF
-striprtf==0.0.26
-
-# مكتبات إضافية للتحليل المتقدم
-regex==2023.8.8
-
-# مكتبات النظام
-gunicorn==21.2.0
-
-numpy==1.24.3
-spacy==3.7.2
-thinc==8.2.2
+Flask>=2.0
+flask-cors
+PyPDF2
+docx2txt
+python-docx
+striprtf
+pymupdf
+spacy
