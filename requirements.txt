@@ -5,4 +5,3 @@ docx2txt
 python-docx
 striprtf
 pymupdf
-spacy
