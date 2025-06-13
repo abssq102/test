@@ -17,7 +17,6 @@
       padding: 0;
       min-height: 100vh;
       background-color: #fff;
-      /* باترن نقاط رمادية */
       background-image:
         radial-gradient(circle, #e5e7ea 1.2px, transparent 1.2px),
         radial-gradient(circle, #e5e7ea 1.2px, transparent 1.2px);
@@ -185,6 +184,7 @@
       min-height: 48px;
       outline: none;
       transition: border 0.25s;
+      font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
     }
     textarea:focus {
       border: 1.5px solid #227093;
@@ -194,22 +194,35 @@
     .analyze-btn {
       display: block;
       margin: 24px auto 0;
-      padding: 12px 38px;
-      font-size: 16px;
-      background: linear-gradient(90deg, #2ec8d1 0%, #2270b9 100%);
+      padding: 13px 44px 13px 44px;
+      font-size: 18px;
+      font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(93deg,#1abc9c 0%, #38ada9 60%, #227093 100%);
       color: #fff;
       border: none;
-      border-radius: 14px;
+      border-radius: 16px;
       cursor: pointer;
-      font-weight: 700;
-      box-shadow: 0 2px 10px rgba(44, 62, 80, 0.09);
+      font-weight: 800;
+      box-shadow: 0 3px 18px rgba(44, 62, 80, 0.11);
       letter-spacing: 1px;
-      transition: background 0.3s, transform 0.2s;
+      transition: background 0.24s, box-shadow 0.18s, transform 0.13s;
       outline: none;
+      position: relative;
+      min-width: 140px;
     }
-    .analyze-btn:hover {
-      background: linear-gradient(90deg, #2270b9 0%, #2ec8d1 100%);
-      transform: scale(1.045);
+    .analyze-btn:hover, .analyze-btn:focus {
+      background: linear-gradient(93deg,#227093 0%, #38ada9 50%, #1abc9c 100%);
+      box-shadow: 0 4px 28px rgba(44,62,80,0.16), 0 2px 8px rgba(52, 152, 219, 0.07);
+      transform: translateY(-2px) scale(1.045);
+    }
+    .analyze-btn-icon {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 2px;
+      margin-left: 0;
+      line-height: 0;
+      position: relative;
+      top: 1px;
     }
 
     #score {
@@ -351,6 +364,7 @@
       cursor: pointer;
       box-shadow: 0 2px 6px #22709318;
       transition: background 0.3s;
+      font-family: 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
     }
     #codeBtn:hover {
       background: linear-gradient(90deg,#2270b9 0%,#2ec8d1 100%);
@@ -392,8 +406,8 @@
   <!-- نافذة كلمة السر -->
   <div id="passwordModal">
     <div class="box">
-      <h3>أدخل الرقم السري</h3>
-      <input type="password" id="secretCodeInput" maxlength="4" pattern="\d{4}" placeholder="أدخل الرقم السري " autofocus>
+      <h3>دخول برمز سري</h3>
+      <input type="password" id="secretCodeInput" maxlength="4" pattern="\d{4}" placeholder="أدخل الرقم السري (٤ أرقام)" autofocus>
       <button id="codeBtn">دخول</button>
       <div id="codeError"></div>
     </div>
@@ -417,7 +431,15 @@
         <div class="filename" id="fileName"></div>
       </div>
       <textarea id="jobDescription" rows="4" placeholder="ألصق وصف الوظيفة هنا للمقارنة... (اختياري)"></textarea>
-      <button class="analyze-btn" type="submit">تحليل</button>
+      <button class="analyze-btn" type="submit">
+        <span class="analyze-btn-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" style="vertical-align:middle;margin-left:6px;" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="8" stroke="#fff" stroke-width="2"/>
+            <path d="M16.5 16.5L20 20" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span style="vertical-align:middle;">تحليل</span>
+      </button>
     </form>
     <div id="score"></div>
     <div id="progress" style="display:none;margin:12px 0;">
@@ -431,12 +453,12 @@
     <div class="section" id="suggestions"></div>
     <div class="section" id="tables-images"></div>
   </div>
- <footer>
-  © 2025 مستند - جميع الحقوق محفوظة
-  <div style="margin-top:10px;font-size:14px;color:#888;line-height:1.7;">
-    هذه الأداة لا تضمن مطابقة 100٪ مع أنظمة تتبع المتقدمين (ATS)، وقد تظهر بعض الأخطاء أو النتائج غير الدقيقة. يُرجى مراجعة النتائج والتحقق منها يدوياً.
-  </div>
-</footer>
+  <footer>
+    © 2025 مستند - جميع الحقوق محفوظة
+    <div style="margin-top:10px;font-size:14px;color:#888;line-height:1.7;">
+      هذه الأداة لا تضمن مطابقة 100٪ مع أنظمة تتبع المتقدمين (ATS)، وقد تظهر بعض الأخطاء أو النتائج غير الدقيقة. يُرجى مراجعة النتائج والتحقق منها يدوياً.
+    </div>
+  </footer>
   <script>
     // حماية الصفحة بكود سري (غير باك اند)
     // يمكنك تغيير الرقم السري من هنا:
