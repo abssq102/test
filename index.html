@@ -70,49 +70,67 @@
       word-spacing: 2px;
     }
 
-    .upload-wrapper {
+    /* Drag & Drop Area Styles */
+    .drop-area {
+      border: 2px dashed #d3dbe5;
+      border-radius: 18px;
+      background: #fafbfc;
+      min-height: 200px;
+      margin: 0 auto 16px auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .upload-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: linear-gradient(90deg, #f5f7fa 0%, #c3cfe2 100%);
-      border: 2px dashed #9ad0ec;
-      color: #227093;
-      font-size: 16px;
-      font-weight: 600;
-      border-radius: 42px;
-      padding: 13px 32px;
-      cursor: pointer;
-      transition: all 0.25s;
-      box-shadow: 0 2px 10px rgba(52, 152, 219, 0.03);
-      min-width: 220px;
       justify-content: center;
+      transition: border-color 0.3s, background 0.3s;
+      position: relative;
+      overflow: hidden;
     }
-    .upload-label:hover {
-      background: linear-gradient(90deg, #e0ecfc 0%, #b8d8eb 100%);
-      border-color: #227093;
+    .drop-area.dragover {
+      border-color: #38ada9;
+      background: #f1fafa;
+    }
+    .icon-wrapper {
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+    .drop-text {
+      color: #bbc4ce;
+      font-size: 17px;
+      margin-bottom: 8px;
+      margin-top: 7px;
+      font-weight: 600;
+      user-select: none;
+    }
+    .choose-btn {
+      background: #fff;
       color: #227093;
+      border: 1.5px solid #d3dbe5;
+      border-radius: 7px;
+      padding: 8px 28px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 18px;
+      transition: background 0.2s, border 0.2s;
+      box-shadow: 0 2px 6px rgba(52,152,219,0.04);
+      display: inline-block;
+      text-align: center;
     }
-    .upload-label i {
-      font-style: normal;
-      font-weight: bold;
-      color: #38ada9;
-      font-size: 22px;
-      margin-left: 2px;
+    .choose-btn:hover {
+      background: #f6fcfc;
+      border-color: #38ada9;
     }
     .filename {
-      margin-top: 10px;
+      margin-top: 0px;
       font-size: 14px;
       color: #2d3436;
       text-align: center;
       word-break: break-all;
+      min-height: 24px;
+      margin-bottom: 6px;
+      font-family: inherit;
     }
+
     input[type="file"] {
       display: none;
     }
@@ -256,7 +274,9 @@
       .container { max-width: 99%; padding: 18px 3vw 18px 3vw; }
       h2 { font-size: 21px; }
       .navbar img { height: 28px; }
-      .upload-label { font-size: 15px; min-width: 120px; padding: 8px 12px;}
+      .drop-area { min-height: 120px; }
+      .icon-wrapper { margin-top: 8px; }
+      .choose-btn { font-size: 15px; min-width: 85px; padding: 7px 8px;}
       textarea { font-size: 13px; }
     }
   </style>
@@ -268,17 +288,24 @@
   <div class="container">
     <h2>تحقق من توافق سيرتك الذاتية مع نظام ATS</h2>
     <form id="uploadForm">
-      <div class="upload-wrapper">
-        <label class="upload-label">
-          <i>📤</i> رفع السيرة الذاتية
-          <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.rtf,.txt">
+      <div class="drop-area" id="drop-area">
+        <div class="icon-wrapper">
+          <svg width="56" height="56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="28" cy="28" r="27" stroke="#ddd" stroke-width="2"/>
+            <path d="M28 38V18" stroke="#bbb" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M22 24l6-6 6 6" stroke="#bbb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="drop-text">اسحب الملف هنا أو</div>
+        <label class="choose-btn">
+          اختيار ملف
+          <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.rtf,.txt" hidden>
         </label>
         <div class="filename" id="fileName"></div>
       </div>
       <textarea id="jobDescription" rows="4" placeholder="ألصق وصف الوظيفة هنا للمقارنة... (اختياري)"></textarea>
       <button class="analyze-btn" type="submit">تحليل</button>
     </form>
-
     <div id="score"></div>
     <div id="progress" style="display:none;margin:12px 0;">
       <progress id="progressBar" value="0" max="100" style="width:100%;"></progress>
@@ -295,25 +322,46 @@
     © 2025 مستند - جميع الحقوق محفوظة
   </footer>
   <script>
-    const resumeInput = document.getElementById('resumeFile');
+    // Drag & Drop Logic
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('resumeFile');
     const fileNameDisplay = document.getElementById('fileName');
-    resumeInput.addEventListener('change', () => {
-      if (resumeInput.files.length) {
-        fileNameDisplay.textContent = `📄 تم اختيار الملف: ${resumeInput.files[0].name}`;
+
+    dropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropArea.classList.add('dragover');
+    });
+    dropArea.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropArea.classList.remove('dragover');
+    });
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropArea.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        showFileName();
+      }
+    });
+    fileInput.addEventListener('change', showFileName);
+
+    function showFileName() {
+      if (fileInput.files.length) {
+        fileNameDisplay.textContent = `📄 ${fileInput.files[0].name}`;
       } else {
         fileNameDisplay.textContent = '';
       }
-    });
+    }
+
+    // Form Submit Logic
     document.getElementById('uploadForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      const fileInput = document.getElementById('resumeFile');
-      const jobDescription = document.getElementById('jobDescription').value.trim();
-
       if (!fileInput.files.length) {
         alert("يرجى اختيار ملف السيرة الذاتية");
         return;
       }
 
+      const jobDescription = document.getElementById('jobDescription').value.trim();
       document.getElementById('progress').style.display = "block";
       document.getElementById('progressBar').value = 20;
       document.getElementById('score').innerText = "⏳ جاري تحليل الملف...";
