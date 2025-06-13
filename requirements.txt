@@ -4,3 +4,4 @@ PyPDF2
 docx2txt
 python-docx
 PyMuPDF
+striprtf
