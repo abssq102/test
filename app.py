@@ -7,11 +7,12 @@ import os
 import re
 import io
 import docx
+import striprtf
 
 app = Flask(__name__)
 CORS(app)
 
-# استخراج النص من PDF أو Word
+# استخراج النص من PDF أو Word أو RTF أو TXT
 def extract_text(file_storage):
     filename = file_storage.filename.lower()
     if filename.endswith(".pdf"):
@@ -19,39 +20,96 @@ def extract_text(file_storage):
         return "\n".join(page.extract_text() or "" for page in reader.pages)
     elif filename.endswith((".doc", ".docx")):
         return docx2txt.process(file_storage)
+    elif filename.endswith(".rtf"):
+        with io.TextIOWrapper(file_storage, encoding="utf-8", errors="ignore") as f:
+            rtf_text = f.read()
+            return striprtf.rtf_to_text(rtf_text)
+    elif filename.endswith(".txt"):
+        return file_storage.read().decode("utf-8", "ignore")
     return ""
 
-# تحليل الكلمات المفتاحية
+# كشف الجداول والصور في PDF وDOCX
+def detect_tables_images(file_storage):
+    filename = file_storage.filename.lower()
+    tables = 0
+    images = 0
+    if filename.endswith(".pdf"):
+        file_storage.seek(0)
+        doc = fitz.open(stream=file_storage.read(), filetype="pdf")
+        for page in doc:
+            # كشف الصور
+            images += len(page.get_images(full=True))
+            # كشف جداول (تقريبي: خطوط رأسية وأفقية كثيرة)
+            text = page.get_text("dict")
+            vert_lines = sum(1 for l in text.get("lines", []) if abs(l['bbox'][0] - l['bbox'][2]) < 2)
+            horiz_lines = sum(1 for l in text.get("lines", []) if abs(l['bbox'][1] - l['bbox'][3]) < 2)
+            if vert_lines > 5 and horiz_lines > 5:
+                tables += 1
+    elif filename.endswith(".docx"):
+        file_storage.seek(0)
+        doc = docx.Document(file_storage)
+        tables = len(doc.tables)
+        images = sum(1 for p in doc.inline_shapes)
+    # ملفات نصية وRTF غالبا لا تدعم جداول/صور بشكل معقد
+    return tables, images
+
+# تحليل الكلمات المفتاحية مع العربية والمرادفات
 def analyze_text(text):
     if not text or len(text.strip()) < 100:
-        return 0, {'found': [], 'missing': []}
+        return 0, [], [], {}
+    # الإنجليزية + مرادفات + العربية
     keywords = {
-        'experience': ['experience', 'worked at', 'job history'],
-        'education': ['education', 'degree', 'university', 'bachelor'],
-        'skills': ['skills', 'proficient in', 'tools'],
-        'contact': ['email', 'phone', 'contact'],
-        'objective': ['objective', 'summary'],
-        'certification': ['certification', 'certified', 'license']
+        'experience': [
+            'experience', 'worked at', 'job history', 'خبرة', 'العمل في', 'الوظيفة'
+        ],
+        'education': [
+            'education', 'degree', 'university', 'bachelor', 'دراسة', 'تعليم', 'شهادة', 'جامعة', 'بكالوريوس'
+        ],
+        'skills': [
+            'skills', 'proficient in', 'tools', 'مهارات', 'إجادة', 'مهارة'
+        ],
+        'contact': [
+            'email', 'phone', 'contact', 'بريد', 'هاتف', 'تواصل'
+        ],
+        'objective': [
+            'objective', 'summary', 'هدف', 'ملخص'
+        ],
+        'certification': [
+            'certification', 'certified', 'license', 'شهادة', 'رخصة', 'اعتماد'
+        ]
     }
+    section_scores = {}
     found, missing = [], []
     score = 100
     text_lower = text.lower()
     for key, variants in keywords.items():
-        if any(v in text_lower for v in variants):
+        present = any(v in text_lower for v in variants)
+        section_scores[key] = 100 if present else 0
+        if present:
             found.append(key)
         else:
             missing.append(key)
             score -= 10
+    detail_report = {
+        "experience": section_scores['experience'],
+        "education": section_scores['education'],
+        "skills": section_scores['skills'],
+        "contact": section_scores['contact'],
+        "objective": section_scores['objective'],
+        "certification": section_scores['certification']
+    }
+    # عقوبة الرموز
     if re.search(r'[•★●▪◆■♦→]', text):
         score -= 5
     if len(text) > 5000:
         score -= 5
-    return max(score, 0), {'found': found, 'missing': missing}
+    return max(score, 0), found, missing, detail_report
 
 # استخراج الخطوط من الملفات
 def detect_fonts(file_storage):
     fonts = set()
     filename = file_storage.filename.lower()
+    file_storage.seek(0)
     if filename.endswith(".pdf"):
         doc = fitz.open(stream=file_storage.read(), filetype="pdf")
         for page in doc:
@@ -72,19 +130,17 @@ def detect_fonts(file_storage):
     fonts = {f for f in fonts if f}
     return list(fonts)
 
-# تحليل التوصيات بناءً على الخط والحجم
-def suggest_improvements(text, fonts):
+# تحليل التوصيات بناءً على الخط والحجم والجداول/الصور
+def suggest_improvements(text, fonts, tables, images):
     suggestions = []
     notes = []
 
-    # تحذير من الخطوط غير المدعومة
     ats_safe_fonts = {"Arial", "Calibri", "Times New Roman", "Georgia", "Helvetica"}
     for font in fonts:
         if font and font not in ats_safe_fonts:
             notes.append(f"الخط '{font}' قد لا يكون مدعومًا في أنظمة ATS.")
             suggestions.append("استخدم خطوط مثل Arial أو Calibri لضمان التوافق.")
 
-    # اقتراح على حجم النص بناءً على عدد الكلمات
     words = len(text.split())
     if words < 100:
         notes.append("السيرة قصيرة جدًا وقد لا توضح خبراتك.")
@@ -92,6 +148,10 @@ def suggest_improvements(text, fonts):
         pt_size = int(re.findall(r'font-size:\s*(\d+)pt', text.lower())[0])
         if pt_size < 10 or pt_size > 14:
             suggestions.append("يفضل أن يكون حجم الخط بين 10 و 12 نقطة للقراءة المثالية في أنظمة ATS.")
+    if tables > 0:
+        notes.append(f"تم اكتشاف {tables} جدول في الملف، وهذا قد يسبب مشاكل لبعض أنظمة ATS.")
+    if images > 0:
+        notes.append(f"تم اكتشاف {images} صورة/عنصر رسومي في الملف، ويفضل تجنب الصور.")
 
     return notes, suggestions
 
@@ -99,9 +159,12 @@ def suggest_improvements(text, fonts):
 def analyze():
     uploaded_file = request.files['resume']
     text = extract_text(uploaded_file)
-    score, details = analyze_text(text)
+    uploaded_file.seek(0)
+    tables, images = detect_tables_images(uploaded_file)
+    uploaded_file.seek(0)
+    score, found, missing, section_scores = analyze_text(text)
     fonts_used = detect_fonts(uploaded_file)
-    notes, suggestions = suggest_improvements(text, fonts_used)
+    notes, suggestions = suggest_improvements(text, fonts_used, tables, images)
 
     job_description = request.form.get('job_description', '').lower()
     match_score = None
@@ -113,11 +176,17 @@ def analyze():
 
     return jsonify({
         'score': score,
-        'details': details,
+        'details': {
+            'found': found,
+            'missing': missing,
+            'sections': section_scores
+        },
         'fonts': fonts_used,
         'notes': notes,
         'suggestions': suggestions,
-        'match_score': match_score
+        'match_score': match_score,
+        'tables': tables,
+        'images': images
     })
 
 if __name__ == '__main__':
