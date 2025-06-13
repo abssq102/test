@@ -3,14 +3,119 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="خدمة تحقق من توافق سيرتك الذاتية مع أنظمة ATS وتحسين فرص قبولك في الوظائف">
+  <meta name="keywords" content="سيرتك الذاتية, ATS, تحسين السيرة الذاتية, فرص العمل">
+  <meta name="author" content="Your Company">
+  <meta name="theme-color" content="#227093">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://yourwebsite.com/">
+  <meta property="og:title" content="تحقق من توافق سيرتك الذاتية مع ATS">
+  <meta property="og:description" content="خدمة تحقق من توافق سيرتك الذاتية مع أنظمة ATS وتحسين فرص قبولك في الوظائف">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://yourwebsite.com/">
+  <meta property="twitter:title" content="تحقق من توافق سيرتك الذاتية مع ATS">
+  <meta property="twitter:description" content="خدمة تحقق من توافق سيرتك الذاتية مع أنظمة ATS وتحسين فرص قبولك في الوظائف">
+  
   <title>تحقق من توافق سيرتك الذاتية مع ATS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     html, body {
       height: 100%;
       min-height: 100vh;
+      scroll-behavior: smooth;
+    }
+
+    /* New styles for detailed analysis */
+    .analysis-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border-left: 4px solid #227093;
+    }
+
+    .analysis-section h3 {
+      color: #227093;
+      margin-bottom: 12px;
+    }
+
+    .section-score {
+      font-size: 24px;
+      font-weight: 800;
+      color: #227093;
+      margin: 10px 0;
+    }
+
+    .critical-issue {
+      background: #ffebee;
+      border-left: 4px solid #ef5350;
+      padding: 10px 15px;
+      margin: 8px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .priority-fix {
+      background: #fff3e0;
+      border-left: 4px solid #ffa726;
+      padding: 10px 15px;
+      margin: 8px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .readability-score {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 10px 15px;
+      margin: 8px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .file-info {
+      background: #f3f4f6;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+
+    .file-info-item {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+
+    .progress-bar-container {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .progress-bar {
+      height: 10px;
+      background: #e9ecef;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #227093, #38ada9);
+      border-radius: 5px;
+      transition: width 0.3s ease;
     }
     body {
       margin: 0;
@@ -139,6 +244,7 @@
       height: 0;
       margin: 0;
     }
+    /* File name display styles */
     .filename {
       margin-top: 0px;
       font-size: 18px;
@@ -156,6 +262,28 @@
       justify-content: center;
       cursor: pointer;
       transition: background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #227093;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     .filename.active {
       display: flex;
@@ -451,16 +579,35 @@
         <span>تحليل</span>
       </button>
     </form>
-    <div id="score"></div>
-    <div id="progress" style="display:none;margin:12px 0;">
-      <progress id="progressBar" value="0" max="100" style="width:100%;"></progress>
-    </div>
-    <div class="section" id="match"></div>
-    <div class="section" id="details"></div>
-    <div class="section" id="sections"></div>
-    <div class="section" id="fonts"></div>
-    <div class="section" id="notes"></div>
-    <div class="section" id="suggestions"></div>
+    <div id="results" class="results">
+        <div id="score" class="score"></div>
+        <div id="progress" class="progress">
+          <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+        
+        <!-- File Info -->
+        <div id="fileInfo" class="file-info"></div>
+        
+        <!-- Readability -->
+        <div id="readability" class="readability"></div>
+        
+        <!-- Critical Issues -->
+        <div id="criticalIssues" class="critical-issues"></div>
+        
+        <!-- Priority Fixes -->
+        <div id="priorityFixes" class="priority-fixes"></div>
+        
+        <!-- Detailed Analysis -->
+        <div id="detailedAnalysis" class="detailed-analysis"></div>
+        
+        <!-- Basic Results -->
+        <div id="details" class="details"></div>
+        <div id="sections" class="sections"></div>
+        <div id="match" class="match"></div>
+        <div id="fonts" class="fonts"></div>
+        <div id="notes" class="notes"></div>
+        <div id="suggestions" class="suggestions"></div>
+      </div>
     <div class="section" id="tables-images"></div>
   </div>
   <footer>
@@ -498,126 +645,242 @@
     const fileInput = document.getElementById('resumeFile');
     const fileNameDisplay = document.getElementById('fileName');
     const iconWrapper = document.getElementById('iconWrapper');
-    const dropText = document.getElementById('dropText');
-    const chooseBtn = document.getElementById('chooseBtn');
+      const submitBtn = document.querySelector('.analyze-btn');
+      const progressBar = document.getElementById('progressBar');
+      const scoreDisplay = document.getElementById('score');
+      const progressDiv = document.getElementById('progress');
 
-    dropArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropArea.classList.add('dragover');
-    });
-    dropArea.addEventListener('dragleave', (e) => {
-      e.preventDefault();
-      dropArea.classList.remove('dragover');
-    });
-    dropArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropArea.classList.remove('dragover');
-      if (e.dataTransfer.files.length) {
-        fileInput.files = e.dataTransfer.files;
-        showFileName();
-      }
-    });
-    fileInput.addEventListener('change', showFileName);
+      // Form Submit Logic with improved error handling
+      document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        
+        // Show loading state
+        const loadingSpinner = document.createElement('div');
+        loadingSpinner.className = 'loading-spinner';
+        submitBtn.appendChild(loadingSpinner);
+        loadingSpinner.style.display = 'block';
+        submitBtn.disabled = true;
 
-    // السماح باختيار ملف جديد عند الضغط على اسم الملف
-    fileNameDisplay.addEventListener('click', () => {
-      fileInput.value = ""; // إعادة التهيئة للسماح برفع نفس الاسم إن لزم
-      fileInput.click();
-    });
+        try {
+          // Validate file input
+          if (!fileInput.files.length) {
+            throw new Error('الرجاء اختيار ملف السيرة الذاتية أولاً');
+          }
 
-    function showFileName() {
-      if (fileInput.files.length) {
-        fileNameDisplay.textContent = fileInput.files[0].name;
-        fileNameDisplay.classList.add('active');
-        iconWrapper.classList.add('hide');
-        dropText.classList.add('hide');
-        chooseBtn.classList.add('hide');
-      } else {
-        fileNameDisplay.textContent = '';
-        fileNameDisplay.classList.remove('active');
-        iconWrapper.classList.remove('hide');
-        dropText.classList.remove('hide');
-        chooseBtn.classList.remove('hide');
-      }
-    }
+          // Initialize progress
+          progressDiv.style.display = 'block';
+          progressBar.value = 20;
+          scoreDisplay.innerText = '⏳ جاري تحليل الملف...';
 
-    // Form Submit Logic
-    document.getElementById('uploadForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      if (!fileInput.files.length) {
-        alert("يرجى اختيار ملف السيرة الذاتية");
-        return;
-      }
+          // Create and send form data
+          const formData = new FormData();
+          formData.append('resume', fileInput.files[0]);
+          formData.append('job_description', document.getElementById('jobDescription').value);
 
-      const jobDescription = document.getElementById('jobDescription').value.trim();
-      document.getElementById('progress').style.display = "block";
-      document.getElementById('progressBar').value = 20;
-      document.getElementById('score').innerText = "⏳ جاري تحليل الملف...";
+          const response = await fetch('https://test-ygja.onrender.com/analyze', {
+            method: 'POST',
+            body: formData
+          });
 
-      const formData = new FormData();
-      formData.append("resume", fileInput.files[0]);
-      formData.append("job_description", jobDescription);
+          if (!response.ok) {
+            throw new Error('حدث خطأ أثناء تحليل السيرة الذاتية');
+          }
 
-      try {
-        const response = await fetch("https://test-ygja.onrender.com/analyze", {
-          method: "POST",
-          body: formData
-        });
-        document.getElementById('progressBar').value = 70;
-        const data = await response.json();
-        document.getElementById('progressBar').value = 100;
-        document.getElementById('progress').style.display = "none";
-        document.getElementById('score').innerText = `نسبة التوافق: ${data.score}%`;
+          progressBar.value = 70;
+          const result = await response.json();
+          progressBar.value = 100;
+          scoreDisplay.innerText = result.score + '%';
 
-        let html = "<strong>تحليل التفاصيل:</strong><ul>";
-        data.details.found.forEach(k => html += `<li class="found">✅ موجود: ${k}</li>`);
-        data.details.missing.forEach(k => html += `<li class="missing">❌ مفقود: ${k}</li>`);
-        html += "</ul>";
-        document.getElementById('details').innerHTML = html;
+          // Process result details
+          let detailsHTML = '<strong>تحليل التفاصيل:</strong><ul>';
+          result.details.found.forEach(k => detailsHTML += `<li class="found">موجود: ${k}</li>`);
+          result.details.missing.forEach(k => detailsHTML += `<li class="missing">مفقود: ${k}</li>`);
+          detailsHTML += '</ul>';
+          document.getElementById('details').innerHTML = detailsHTML;
 
-        let sectionsHTML = "<strong>تقييم كل قسم:</strong><ul>";
-        for (const [section, val] of Object.entries(data.details.sections)) {
-          sectionsHTML += `<li>${section}: <b>${val}%</b></li>`;
+          let sectionsHTML = '<strong>تقييم كل قسم:</strong><ul>';
+          for (const [section, val] of Object.entries(result.details.sections)) {
+            sectionsHTML += `<li>${section}: <b>${val}%</b></li>`;
+          }
+          sectionsHTML += '</ul>';
+          document.getElementById('sections').innerHTML = sectionsHTML;
+
+          if (result.match_score !== undefined && result.match_score !== null) {
+            document.getElementById('match').innerText = `📊 نسبة تطابق السيرة مع وصف الوظيفة: ${result.match_score}%`;
+          } else {
+            document.getElementById('match').innerText = '';
+          }
+
+          if (result.fonts?.length) {
+            document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة: ${result.fonts.join(", ")}`;
+          } else {
+            document.getElementById('fonts').innerHTML = '';
+          }
+
+          if (result.notes?.length) {
+            document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات:</strong><ul>' + 
+              result.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>';
+          } else {
+            document.getElementById('notes').innerHTML = '';
+          }
+
+          if (result.improvements?.critical_issues?.length) {
+            document.getElementById('criticalIssues').innerHTML = '<strong>⚠️ المشاكل الحرجة:</strong><ul>' + 
+              result.improvements.critical_issues.map(i => `<li class="critical-issue">${i}</li>`).join('') + '</ul>';
+          } else {
+            document.getElementById('criticalIssues').innerHTML = '';
+          }
+
+          if (result.improvements?.priority_fixes?.length) {
+            document.getElementById('priorityFixes').innerHTML = '<strong>⚡ الأولويات:</strong><ul>' + 
+              result.improvements.priority_fixes.map(f => `<li class="priority-fix">${f}</li>`).join('') + '</ul>';
+          } else {
+            document.getElementById('priorityFixes').innerHTML = '';
+          }
+
+          if (result.file_info) {
+            const fileInfoHTML = `
+              <div class="file-info-item">
+                <span>اسم الملف:</span>
+                <span>${result.file_info.name}</span>
+              </div>
+              <div class="file-info-item">
+                <span>حجم الملف:</span>
+                <span>${(result.file_info.size / 1024).toFixed(1)} KB</span>
+              </div>
+              <div class="file-info-item">
+                <span>عدد الكلمات:</span>
+                <span>${result.file_info.word_count}</span>
+              </div>
+            `;
+            document.getElementById('fileInfo').innerHTML = fileInfoHTML;
+          }
+
+          if (result.readability_score !== undefined) {
+            const readabilityHTML = `
+              <div class="readability-score">
+                <strong>قابلية القراءة:</strong>
+                <span>${result.readability_score}%</span>
+              </div>
+            `;
+            document.getElementById('readability').innerHTML = readabilityHTML;
+          }
+
+          if (result.detailed_analysis) {
+            const detailedHTML = `
+              <div class="analysis-section">
+                <h3>تحليل مفصل</h3>
+                ${Object.entries(result.detailed_analysis)
+                  .map(([section, data]) => `
+                    <div class="section-score">
+                      <strong>${section}:</strong>
+                      <span>${data.score}%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                      <div class="progress-bar">
+                        <div class="progress-bar-fill" style="width: ${data.score}%"></div>
+                      </div>
+                    </div>
+                    <div>
+                      <strong>المطابقات:</strong> ${data.matches}/${data.total_keywords}
+                      <br>
+                      <strong>جودة السياق:</strong> ${data.context_quality}%
+                    </div>
+                  `)
+                  .join('')}
+              </div>
+            `;
+            document.getElementById('detailedAnalysis').innerHTML = detailedHTML;
+          }
+
+          if (result.improvements?.suggestions?.length) {
+            document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات:</strong><ul>' + 
+              result.improvements.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
+          } else {
+            document.getElementById('suggestions').innerHTML = '';
+          }
+        } catch (error) {
+          progressDiv.style.display = 'none';
+          scoreDisplay.innerText = 'حدث خطأ';
+          console.error('Error:', error);
+        } finally {
+          // Clean up loading state
+          const spinner = submitBtn.querySelector('.loading-spinner');
+          if (spinner) {
+            spinner.remove();
+          }
+          submitBtn.disabled = false;
+          progressDiv.style.display = 'none';
         }
-        sectionsHTML += "</ul>";
-        document.getElementById('sections').innerHTML = sectionsHTML;
+      });
 
-        if (data.match_score !== undefined && data.match_score !== null) {
-          document.getElementById('match').innerText = `📊 نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%`;
+      // Drag & Drop Logic
+      dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.classList.add('dragover');
+      });
+
+      dropArea.addEventListener('dragleave', () => {
+        dropArea.classList.remove('dragover');
+      });
+
+      dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length) {
+          fileInput.files = files;
+          showFileName();
+        }
+      });
+
+      fileInput.addEventListener('change', showFileName);
+
+      function showFileName() {
+        const file = fileInput.files[0];
+        if (file) {
+          fileNameDisplay.textContent = file.name;
+          fileNameDisplay.classList.add('active');
         } else {
+          fileNameDisplay.classList.remove('active');
+        }
+      }
+
+      // السماح باختيار ملف جديد عند الضغط على اسم الملف
+      fileNameDisplay.addEventListener('click', () => {
+        fileInput.value = '';
+        fileInput.click();
+      });
+
+      // تحسينات إضافية
+      // تأكيد قبل مسح كل النتائج
+      document.getElementById('clearResults').addEventListener('click', (e) => {
+        if (confirm('هل أنت متأكد من مسح كل النتائج؟')) {
+          // Clear basic elements
+          document.getElementById('details').innerHTML = '';
+          document.getElementById('sections').innerHTML = '';
           document.getElementById('match').innerText = '';
-        }
-
-        if (data.fonts?.length) {
-          document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة: ${data.fonts.join(", ")}`;
-        } else {
           document.getElementById('fonts').innerHTML = '';
-        }
-
-        if (data.notes?.length) {
-          document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات:</strong><ul>' + data.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>';
-        } else {
           document.getElementById('notes').innerHTML = '';
-        }
-
-        if (data.suggestions?.length) {
-          document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
-        } else {
           document.getElementById('suggestions').innerHTML = '';
+          
+          // Clear new elements
+          document.getElementById('fileInfo').innerHTML = '';
+          document.getElementById('readability').innerHTML = '';
+          document.getElementById('criticalIssues').innerHTML = '';
+          document.getElementById('priorityFixes').innerHTML = '';
+          document.getElementById('detailedAnalysis').innerHTML = '';
+          
+          // Reset score and progress
+          scoreDisplay.innerText = '';
+          progressDiv.style.display = 'none';
+          progressBar.value = 0;
+          
+          // Reset file input
+          fileInput.value = '';
+          fileNameDisplay.textContent = 'اختر ملف السيرة الذاتية';
         }
-
-        document.getElementById('tables-images').innerHTML = '';
-        if ((data.tables && data.tables > 0) || (data.images && data.images > 0)) {
-          let war = `<strong>تحذيرات رسوميات أو جداول:</strong><ul>`;
-          if (data.tables > 0) war += `<li>⚠️ تم اكتشاف ${data.tables} جدول</li>`;
-          if (data.images > 0) war += `<li>⚠️ تم اكتشاف ${data.images} صورة/عنصر رسومي</li>`;
-          war += "</ul>";
-          document.getElementById('tables-images').innerHTML = war;
-        }
-      } catch (err) {
-        document.getElementById('progress').style.display = "none";
-        document.getElementById('score').innerText = "حدث خطأ أثناء تحليل السيرة الذاتية!";
-      }
+      });
     });
   </script>
 </body>
