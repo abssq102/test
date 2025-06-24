@@ -12,15 +12,15 @@ import tempfile
 import logging
 
 app = Flask(__name__)
-# السماح بجميع النطاقات مؤقتًا. في الإنتاج، حدد النطاقات المسموح بها.
+# السماح بجميع النطاقات مؤقتًا. في الإنتاج، حدد النطاقات المسموح بها بدقة.
 CORS(app)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- إعدادات الأمان (هام: قم بتغيير هذا الرمز في بيئة الإنتاج!) ---
-SECRET_ACCESS_CODE = "1234" # غير هذا الرمز!
-# -----------------------------------------------------------------
+# --- إعدادات الأمان (هام: قم بتغيير هذا الرمز إلى قيمة قوية ومعقدة في بيئة الإنتاج!) ---
+SECRET_ACCESS_CODE = "1234" # غير هذا الرمز إلى رمز آمن ومعقد!
+# ----------------------------------------------------------------------------------
 
 # استخراج النص من الملف
 def extract_text(file_storage):
@@ -86,7 +86,7 @@ def analyze_document_structure(file_storage):
                 for b in page.get_text("dict")["blocks"]:
                     for l in b.get("lines", []):
                         for s in l.get("spans", []):
-                            font_name = s.get("font", "").split('+')[-1] # إزالة البادئة العشوائية
+                            font_name = s.get("font", "").split('+')[-1] # إزالة البادئة العشوائية (إذا وجدت)
                             font_size = s.get("size", 0)
                             if font_name:
                                 fonts.add(font_name)
@@ -107,7 +107,7 @@ def analyze_document_structure(file_storage):
                     if run.font.size:
                         # font.size يعود بكائن Pt، نحوله إلى قيمة عددية
                         font_sizes.append(run.font.size.pt)
-            for table in doc.tables:
+            for table in doc.tables: # فحص الخطوط داخل الجداول أيضًا
                 for row in table.rows:
                     for cell in row.cells:
                         for para in cell.paragraphs:
@@ -121,7 +121,7 @@ def analyze_document_structure(file_storage):
         logger.error(f"Error detecting tables/images/fonts: {e}", exc_info=True)
     return tables, images, list(fonts), font_sizes
 
-# تحليل الكلمات المفتاحية والأقسام
+# تحليل الكلمات المفتاحية والأقسام لحساب النسبة الإجمالية
 def analyze_text(text):
     if not text or len(text.strip()) < 100:
         # إذا كان النص قصيرًا جدًا أو فارغًا، أعد تقييمًا منخفضًا جدًا
@@ -133,32 +133,33 @@ def analyze_text(text):
     # كلمات مفتاحية مع أوزان (تقريبية) لكل قسم
     keywords_weighted = {
         'experience': {
-            'keywords': ['experience', 'work history', 'employment', 'responsibilities', 'achievements',
-                         'خبرة', 'سجل وظيفي', 'مهام', 'إنجازات', 'مسؤوليات'],
+            'keywords': ['experience', 'work history', 'employment', 'responsibilities', 'achievements', 'projects', 'job title',
+                         'خبرة', 'سجل وظيفي', 'توظيف', 'مهام', 'إنجازات', 'مشاريع', 'المسمى الوظيفي'],
             'weight': 30
         },
         'education': {
-            'keywords': ['education', 'degree', 'university', 'bachelor', 'master', 'phd',
-                         'دراسة', 'تعليم', 'شهادة', 'جامعة', 'بكالوريوس', 'ماجستير', 'دكتوراه'],
+            'keywords': ['education', 'degree', 'university', 'bachelor', 'master', 'phd', 'college', 'graduation',
+                         'دراسة', 'تعليم', 'شهادة', 'جامعة', 'بكالوريوس', 'ماجستير', 'دكتوراه', 'تخرج'],
             'weight': 20
         },
         'skills': {
-            'keywords': ['skills', 'proficient', 'expertise', 'technologies', 'tools',
-                         'مهارات', 'إجادة', 'خبرة فنية', 'أدوات', 'تقنيات'],
+            'keywords': ['skills', 'proficient', 'expertise', 'technologies', 'tools', 'languages', 'competencies',
+                         'مهارات', 'إجادة', 'خبرة فنية', 'تقنيات', 'أدوات', 'لغات', 'كفاءات'],
             'weight': 25
         },
         'contact': {
-            'keywords': ['email', 'phone', 'contact', 'linkedin', 'portfolio', 'github',
-                         'بريد', 'هاتف', 'تواصل', 'لينكد إن', 'محفظة أعمال'],
+            'keywords': ['email', 'phone', 'contact', 'linkedin', 'portfolio', 'github', 'address', 'website',
+                         'بريد', 'هاتف', 'تواصل', 'لينكد إن', 'محفظة أعمال', 'عنوان', 'موقع الكتروني'],
             'weight': 10
         },
         'objective_summary': { # تم تغيير الاسم ليكون أكثر شمولاً
-            'keywords': ['objective', 'summary', 'profile', 'career goal',
-                         'هدف', 'ملخص', 'نبذة', 'نبذة عني', 'ملف شخصي'],
+            'keywords': ['objective', 'summary', 'profile', 'career goal', 'about me', 'introduction',
+                         'هدف', 'ملخص', 'نبذة', 'نبذة عني', 'ملف شخصي', 'مقدمة'],
             'weight': 10
         },
         'certification': {
-            'keywords': ['certification', 'certified', 'license', 'licensure', 'شهادة', 'اعتماد', 'رخصة'],
+            'keywords': ['certification', 'certified', 'license', 'licensure', 'award', 'workshop',
+                         'شهادة', 'اعتماد', 'رخصة', 'جائزة', 'ورشة عمل'],
             'weight': 5
         }
     }
@@ -180,69 +181,80 @@ def analyze_text(text):
             missing_sections.append(key)
             # لا نخصم، بل نبني النتيجة من الأقسام الموجودة
 
-    # عقوبة الرموز غير التقليدية (ليس بالضرورة كل الرموز)
-    # يمكن تخصيص هذه الرموز لتكون أكثر استهدافًا للرموز التي تسبب مشاكل
-    if re.search(r'[\u2022\u25CF\u25BA\u25BC\u25B6\u25C0\u25C6\u25A0\u2713\u2714\u2715\u2716\u2705]', text_lower): # بعض رموز التعداد أو العلامات
-        if 'skills' not in found_sections and 'experience' not in found_sections: # خصم فقط إذا لم تستخدم في الأقسام المتوقعة
-             total_score -= 5
-             logger.info("Found problematic symbols, deducting 5 points.")
-
-    # عقوبة الطول الزائد
-    if len(text) > 5000: # أكثر من 5000 حرف قد يكون طويلاً جداً
+    # عقوبة الرموز غير التقليدية (الرموز التي قد تسبب مشاكل في أنظمة ATS القديمة)
+    # هذه الرموز تشمل بعض أشكال النقاط التعدادية غير القياسية والسهام.
+    # يتم الخصم فقط إذا لم تكن السيرة الذاتية طويلة بما يكفي لتوقع استخدامها في أقسام مثل المهارات أو الخبرة.
+    if re.search(r'[\u2022\u25CF\u25BA\u25BC\u25B6\u25C0\u25C6\u25A0\u2713\u2714\u2715\u2716\u2705\u2192\u2190\u2191\u2193]', text_lower) and len(text) < 500:
         total_score -= 5
-        logger.info("Resume too long, deducting 5 points.")
+        logger.info("Found potentially problematic symbols in short resume, deducting 5 points.")
 
-    # ضمان أن النتيجة لا تقل عن صفر
-    return max(0, total_score), found_sections, missing_sections, section_scores
+    # عقوبة الطول الزائد (قد يكون مبالغاً فيه وغير مفضل للـ ATS)
+    if len(text.split()) > 700: # عدد الكلمات بدلاً من الحروف
+        total_score -= 5
+        logger.info("Resume too long (over 700 words), deducting 5 points.")
+    elif len(text.split()) < 150: # عقوبة للسيرة الذاتية القصيرة جداً
+        total_score -= 10
+        logger.info("Resume too short (under 150 words), deducting 10 points.")
+
+
+    # ضمان أن النتيجة لا تقل عن صفر وتتجاوز 100
+    return min(100, max(0, total_score)), found_sections, missing_sections, section_scores
 
 # تحليل التوصيات بناءً على الخط والحجم والجداول/الصور
 def suggest_improvements(fonts, font_sizes, tables, images):
     suggestions = set()
     notes = []
-    ats_safe_fonts = {"Arial", "Calibri", "Times New Roman", "Georgia", "Helvetica", "Verdana", "Roboto", "Lato", "Open Sans"} # تم إضافة المزيد من الخطوط الآمنة
+    # قائمة أوسع من الخطوط الآمنة والمتوافقة مع ATS
+    ats_safe_fonts = {"Arial", "Calibri", "Times New Roman", "Georgia", "Helvetica", "Verdana", "Roboto", "Lato", "Open Sans", "Tahoma", "Garamond"}
 
     # تحليل الخطوط المستخدمة
-    for font in fonts:
-        if font and font not in ats_safe_fonts:
-            notes.append(f"الخط '{font}' قد لا يكون مدعومًا في أنظمة ATS.")
-            suggestions.add("استخدم خطوطًا شائعة مثل Arial, Calibri, Times New Roman, Helvetica لضمان التوافق.")
+    if fonts:
+        for font in fonts:
+            # التحقق من الخطوط بأسماء جزئية أيضًا (مثل ArialMT -> Arial)
+            found_safe_font = False
+            for safe_font in ats_safe_fonts:
+                if safe_font.lower() in font.lower():
+                    found_safe_font = True
+                    break
+            
+            if not found_safe_font:
+                notes.append(f"الخط '{font}' قد لا يكون مدعومًا بشكل كامل في أنظمة ATS القديمة.")
+                suggestions.add("استخدم خطوطًا شائعة مثل Arial, Calibri, Times New Roman, Helvetica لضمان أقصى توافق.")
+    else:
+        notes.append("لم يتمكن النظام من تحديد الخطوط المستخدمة. قد يكون هذا بسبب تنسيق الملف أو محتواه. يفضل استخدام خطوط نصية قياسية.")
+
 
     # تحليل أحجام الخطوط
     if font_sizes:
-        # حساب متوسط حجم الخطوط أو حجم الخط الأكثر تكرارًا
-        # هنا نأخذ المتوسط لتبسيط الكشف
+        # حساب متوسط حجم الخطوط أو حجم الخط الأكثر تكرارًا (المتوسط هنا)
         avg_font_size = sum(font_sizes) / len(font_sizes)
-        if avg_font_size < 9 or avg_font_size > 14: # نطاق أوسع قليلاً للقبول
-            notes.append(f"متوسط حجم الخط هو {avg_font_size:.1f} نقطة، وهو خارج النطاق الموصى به.")
-            suggestions.add("يفضل أن يكون حجم الخط الرئيسي بين 10 و 12 نقطة للقراءة المثالية في أنظمة ATS.")
+        
+        # تحويل الأحجام إلى أرقام صحيحة أو عشرية لسهولة المقارنة
+        if avg_font_size < 9.5: # أقل من 9.5 نقطة يعتبر صغيراً جداً
+            notes.append(f"متوسط حجم الخط هو {avg_font_size:.1f} نقطة، وهو صغير جداً للقراءة في أنظمة ATS وربما للبشر.")
+            suggestions.add("اجعل حجم الخط الرئيسي في السيرة الذاتية بين 10 و 12 نقطة.")
+        elif avg_font_size > 14.5: # أكبر من 14.5 نقطة يعتبر كبيراً جداً
+            notes.append(f"متوسط حجم الخط هو {avg_font_size:.1f} نقطة، وهو كبير جداً وقد يجعل السيرة الذاتية تبدو غير احترافية.")
+            suggestions.add("اجعل حجم الخط الرئيسي في السيرة الذاتية بين 10 و 12 نقطة.")
         elif avg_font_size < 10:
-             suggestions.add("حجم الخط يبدو صغيرًا بعض الشيء (أقل من 10 نقاط). قد يكون من الأفضل زيادته قليلاً.")
+             suggestions.add("حجم الخط يبدو صغيراً بعض الشيء (أقل من 10 نقاط). قد يكون من الأفضل زيادته قليلاً لضمان سهولة القراءة.")
         elif avg_font_size > 12:
-             suggestions.add("حجم الخط يبدو كبيرًا بعض الشيء (أكثر من 12 نقطة). قد يكون من الأفضل تقليله قليلاً.")
+             suggestions.add("حجم الخط يبدو كبيراً بعض الشيء (أكثر من 12 نقطة). قد يكون من الأفضل تقليله قليلاً للحفاظ على الإيجاز.")
 
 
     # ملاحظات على الجداول والصور
     if tables > 0:
-        notes.append(f"تم اكتشاف {tables} جدول في الملف، وهذا قد يسبب مشاكل لبعض أنظمة ATS في قراءة المحتوى.")
-        suggestions.add("تجنب استخدام الجداول قدر الإمكان في السيرة الذاتية، أو حولها إلى نص عادي.")
+        notes.append(f"تم اكتشاف {tables} جدول في الملف، وهذا قد يسبب مشاكل لبعض أنظمة ATS في قراءة المحتوى بشكل صحيح.")
+        suggestions.add("تجنب استخدام الجداول قدر الإمكان في السيرة الذاتية، أو قم بتحويل محتواها إلى نص عادي.")
     if images > 0:
-        notes.append(f"تم اكتشاف {images} صورة/عنصر رسومي في الملف، ويفضل تجنب الصور تمامًا.")
-        suggestions.add("يفضل عدم تضمين الصور أو العناصر الرسومية (مثل الرسوم البيانية) في السيرة الذاتية لأنظمة ATS.")
+        notes.append(f"تم اكتشاف {images} صورة/عنصر رسومي في الملف، ويفضل تجنب الصور تمامًا في السيرة الذاتية.")
+        suggestions.add("يفضل عدم تضمين الصور أو العناصر الرسومية (مثل الرسوم البيانية) في السيرة الذاتية الموجهة لأنظمة ATS.")
     
-    # ملاحظات عامة
-    if not fonts: # إذا لم يتم اكتشاف أي خطوط
-        notes.append("لم يتمكن النظام من تحديد الخطوط المستخدمة. قد يكون هذا بسبب تنسيق الملف أو محتواه.")
-
-
     return notes, list(suggestions)
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
-        # التحقق من الرمز السري (إذا كان مطلوبًا) - يمكنك وضع هذا في middleware
-        # if request.headers.get('X-Secret-Code') != SECRET_ACCESS_CODE:
-        #    return jsonify({'error': 'رمز سري غير صالح'}), 403
-
         if 'resume' not in request.files:
             return jsonify({'error': 'لم يتم رفع ملف السيرة الذاتية'}), 400
         uploaded_file = request.files['resume']
@@ -259,21 +271,22 @@ def analyze():
             logger.error("No text extracted from file!")
             return jsonify({'error': 'فشل في استخراج النص من الملف أو الملف فارغ أو غير مدعوم. يرجى التأكد من أن الملف نصي وقابل للقراءة.'}), 400
 
-        # إعادة تهيئة stream بعد استخراج النص
+        # إعادة تهيئة stream بعد استخراج النص (لا تزال ضرورية)
         file_stream.seek(0)
         tables, images, fonts_used, font_sizes = analyze_document_structure(file_stream)
 
         # تحليل النص
         score, found, missing, section_scores = analyze_text(text)
 
-        # اقتراحات بناءً على التحليل الهيكلي
+        # اقتراحات بناءً على التحليل الهيكلي والتنسيقي
         notes, suggestions = suggest_improvements(fonts_used, font_sizes, tables, images)
 
-        # تحليل تطابق وصف الوظيفة
+        # تحليل تطابق وصف الوظيفة (مطابقة الكلمات)
         job_description = request.form.get('job_description', '').lower()
         match_score = None
         if job_description:
             # تنظيف النص من الرموز وعلامات الترقيم لتحسين المطابقة
+            text_lower = text.lower() # تأكد من أن النص هنا lowercase
             cleaned_resume_text = re.sub(r'[^\w\s]', '', text_lower)
             cleaned_jd_text = re.sub(r'[^\w\s]', '', job_description)
 
@@ -282,8 +295,7 @@ def analyze():
 
             if jd_words:
                 common = resume_words.intersection(jd_words)
-                # يمكن تحسين هذه النسبة بأخذ في الاعتبار عدد الكلمات في السيرة الذاتية
-                # مثال: متوسط نسبة الكلمات المشتركة إلى كلمات وصف الوظيفة وكلمات السيرة الذاتية
+                # حساب نسبة الكلمات المشتركة بناءً على كلمات وصف الوظيفة
                 match_score = round((len(common) / len(jd_words)) * 100)
             else:
                 match_score = 0
@@ -310,6 +322,7 @@ def analyze():
         logger.error(f"Exception in analyze: {e}", exc_info=True)
         return jsonify({'error': 'خطأ غير متوقع أثناء تحليل السيرة الذاتية', 'details': str(e)}), 500
 
+# نقطة نهاية للتحقق من الرمز السري (تستخدمها الواجهة الأمامية)
 @app.route('/check_code', methods=['POST'])
 def check_code():
     data = request.get_json()
@@ -326,5 +339,6 @@ def health_check():
     })
 
 if __name__ == '__main__':
+    # استخدم debug=True فقط في بيئة التطوير، اجعله False في الإنتاج
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True) # debug=True للمرحلة التجريبية فقط
+    app.run(host="0.0.0.0", port=port, debug=True)
