@@ -294,7 +294,7 @@
       border: 1px solid #e4ecf4;
     }
 
-    #fonts strong, #notes strong, #suggestions strong, #tables-images strong, #sections strong {
+    #fonts strong, #notes strong, #suggestions strong, #tables-images strong, #sections strong, #font-sizes-info strong {
       color: #227093;
       font-size: 15.5px;
       font-weight: 700;
@@ -413,7 +413,6 @@
   <div class="navbar">
     <img src="logo.png" alt="Logo">
   </div>
-  <!-- نافذة كلمة السر -->
   <div id="passwordModal">
     <div class="box">
       <h3>دخول برمز سري</h3>
@@ -454,12 +453,13 @@
     <div id="score"></div>
     <div id="progress" style="display:none;margin:12px 0;">
       <progress id="progressBar" value="0" max="100" style="width:100%;"></progress>
+      <span id="progressText" style="margin-top: 5px; font-size: 14px; color: #555;"></span>
     </div>
     <div class="section" id="match"></div>
     <div class="section" id="details"></div>
     <div class="section" id="sections"></div>
     <div class="section" id="fonts"></div>
-    <div class="section" id="notes"></div>
+    <div class="section" id="font-sizes-info"></div> <div class="section" id="notes"></div>
     <div class="section" id="suggestions"></div>
     <div class="section" id="tables-images"></div>
   </div>
@@ -470,23 +470,36 @@
     </div>
   </footer>
   <script>
-    // حماية الصفحة بكود سري (غير باك اند)
-    // يمكنك تغيير الرقم السري من هنا:
-    const ADMIN_SECRET_CODE = "1234";
+    // --- منطق التحقق من الرمز السري (الآن يتفاعل مع الخلفية) ---
+    const ADMIN_SECRET_CODE_ENDPOINT = "https://test-ygja.onrender.com/check_code"; // استخدم عنوان الـ API الخاص بك
     const modal = document.getElementById('passwordModal');
     const input = document.getElementById('secretCodeInput');
     const btn = document.getElementById('codeBtn');
     const error = document.getElementById('codeError');
 
-    function checkCode() {
-      if (input.value === ADMIN_SECRET_CODE) {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-      } else {
-        error.textContent = "رمز غير صحيح!";
-        input.value = '';
-        input.focus();
-      }
+    async function checkCode() {
+        error.textContent = ""; // مسح أي رسالة خطأ سابقة
+        try {
+            const response = await fetch(ADMIN_SECRET_CODE_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: input.value })
+            });
+            const data = await response.json();
+            if (data.success) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            } else {
+                error.textContent = data.message || "رمز غير صحيح!";
+                input.value = '';
+                input.focus();
+            }
+        } catch (e) {
+            error.textContent = "حدث خطأ في الاتصال بالخادم.";
+            console.error("Error checking code:", e);
+        }
     }
 
     btn.onclick = checkCode;
@@ -550,73 +563,116 @@
       }
 
       const jobDescription = document.getElementById('jobDescription').value.trim();
+      
+      // إظهار مؤشر التقدم وتحديث النص
       document.getElementById('progress').style.display = "block";
-      document.getElementById('progressBar').value = 20;
+      document.getElementById('progressBar').value = 0;
+      document.getElementById('progressText').innerText = "جاري تحميل الملف...";
       document.getElementById('score').innerText = "⏳ جاري تحليل الملف...";
+      
+      // إخفاء النتائج السابقة
+      document.getElementById('details').innerHTML = '';
+      document.getElementById('sections').innerHTML = '';
+      document.getElementById('match').innerText = '';
+      document.getElementById('fonts').innerHTML = '';
+      document.getElementById('font-sizes-info').innerHTML = ''; // مسح معلومات حجم الخط
+      document.getElementById('notes').innerHTML = '';
+      document.getElementById('suggestions').innerHTML = '';
+      document.getElementById('tables-images').innerHTML = '';
 
       const formData = new FormData();
       formData.append("resume", fileInput.files[0]);
       formData.append("job_description", jobDescription);
 
       try {
-        const response = await fetch("https://test-ygja.onrender.com/analyze", {
+        // تحديث شريط التقدم خلال الإرسال (تقريبي)
+        document.getElementById('progressBar').value = 10;
+        document.getElementById('progressText').innerText = "جارٍ التحميل إلى الخادم...";
+
+        const response = await fetch("https://test-ygja.onrender.com/analyze", { // تأكد من استخدام عنوان الـ API الصحيح
           method: "POST",
           body: formData
         });
-        document.getElementById('progressBar').value = 70;
+        
+        document.getElementById('progressBar').value = 50;
+        document.getElementById('progressText').innerText = "جاري معالجة الملف...";
+
         const data = await response.json();
-        document.getElementById('progressBar').value = 100;
-        document.getElementById('progress').style.display = "none";
-        document.getElementById('score').innerText = `نسبة التوافق: ${data.score}%`;
+        
+        document.getElementById('progressBar').value = 90;
+        document.getElementById('progressText').innerText = "جاري تجهيز النتائج...";
 
-        let html = "<strong>تحليل التفاصيل:</strong><ul>";
-        data.details.found.forEach(k => html += `<li class="found">✅ موجود: ${k}</li>`);
-        data.details.missing.forEach(k => html += `<li class="missing">❌ مفقود: ${k}</li>`);
-        html += "</ul>";
-        document.getElementById('details').innerHTML = html;
+        if (response.ok) { // تحقق من أن الاستجابة ناجحة (حالة 2xx)
+            document.getElementById('score').innerText = `نسبة التوافق: ${data.score}%`;
 
-        let sectionsHTML = "<strong>تقييم كل قسم:</strong><ul>";
-        for (const [section, val] of Object.entries(data.details.sections)) {
-          sectionsHTML += `<li>${section}: <b>${val}%</b></li>`;
-        }
-        sectionsHTML += "</ul>";
-        document.getElementById('sections').innerHTML = sectionsHTML;
+            let html = "<strong>تحليل التفاصيل:</strong><ul>";
+            data.details.found.forEach(k => html += `<li class="found">✅ موجود: ${k.replace('_', ' ')}</li>`); // تحسين عرض الاسم
+            data.details.missing.forEach(k => html += `<li class="missing">❌ مفقود: ${k.replace('_', ' ')}</li>`);
+            html += "</ul>";
+            document.getElementById('details').innerHTML = html;
 
-        if (data.match_score !== undefined && data.match_score !== null) {
-          document.getElementById('match').innerText = `📊 نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%`;
+            let sectionsHTML = "<strong>تقييم كل قسم:</strong><ul>";
+            for (const [section, val] of Object.entries(data.details.sections)) {
+            sectionsHTML += `<li>${section.replace('_', ' ')}: <b>${val}%</b></li>`;
+            }
+            sectionsHTML += "</ul>";
+            document.getElementById('sections').innerHTML = sectionsHTML;
+
+            if (data.match_score !== undefined && data.match_score !== null) {
+            document.getElementById('match').innerText = `📊 نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%`;
+            } else {
+            document.getElementById('match').innerText = '';
+            }
+
+            if (data.fonts?.length) {
+            document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة: ${data.fonts.join(", ")}`;
+            } else {
+            document.getElementById('fonts').innerHTML = '<strong>🔤 الخطوط المستخدمة:</strong> لم يتم اكتشاف خطوط.';
+            }
+
+            // عرض أحجام الخطوط المكتشفة
+            if (data.font_sizes_detected && data.font_sizes_detected.length > 0) {
+                const uniqueSizes = [...new Set(data.font_sizes_detected.map(s => s.toFixed(1)))]; // للفرز والعرض كقائمة
+                document.getElementById('font-sizes-info').innerHTML = `<strong>📏 أحجام الخطوط المكتشفة (نقطة):</strong> ${uniqueSizes.sort((a,b) => parseFloat(a)-parseFloat(b)).join(", ")}`;
+            } else {
+                document.getElementById('font-sizes-info').innerHTML = '<strong>📏 أحجام الخطوط المكتشفة:</strong> لم يتم اكتشاف معلومات حجم الخط.';
+            }
+
+            if (data.notes?.length) {
+            document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات:</strong><ul>' + data.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>';
+            } else {
+            document.getElementById('notes').innerHTML = '';
+            }
+
+            if (data.suggestions?.length) {
+            document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
+            } else {
+            document.getElementById('suggestions').innerHTML = '';
+            }
+
+            document.getElementById('tables-images').innerHTML = '';
+            if ((data.tables && data.tables > 0) || (data.images && data.images > 0)) {
+            let war = `<strong>تحذيرات رسوميات أو جداول:</strong><ul>`;
+            if (data.tables > 0) war += `<li>⚠️ تم اكتشاف ${data.tables} جدول</li>`;
+            if (data.images > 0) war += `<li>⚠️ تم اكتشاف ${data.images} صورة/عنصر رسومي</li>`;
+            war += "</ul>";
+            document.getElementById('tables-images').innerHTML = war;
+            }
         } else {
-          document.getElementById('match').innerText = '';
-        }
-
-        if (data.fonts?.length) {
-          document.getElementById('fonts').innerHTML = `🔤 الخطوط المستخدمة: ${data.fonts.join(", ")}`;
-        } else {
-          document.getElementById('fonts').innerHTML = '';
-        }
-
-        if (data.notes?.length) {
-          document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات:</strong><ul>' + data.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>';
-        } else {
-          document.getElementById('notes').innerHTML = '';
-        }
-
-        if (data.suggestions?.length) {
-          document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
-        } else {
-          document.getElementById('suggestions').innerHTML = '';
-        }
-
-        document.getElementById('tables-images').innerHTML = '';
-        if ((data.tables && data.tables > 0) || (data.images && data.images > 0)) {
-          let war = `<strong>تحذيرات رسوميات أو جداول:</strong><ul>`;
-          if (data.tables > 0) war += `<li>⚠️ تم اكتشاف ${data.tables} جدول</li>`;
-          if (data.images > 0) war += `<li>⚠️ تم اكتشاف ${data.images} صورة/عنصر رسومي</li>`;
-          war += "</ul>";
-          document.getElementById('tables-images').innerHTML = war;
+            // التعامل مع الأخطاء التي تأتي من الخادم (مثلاً 400، 500)
+            const errorMsg = data.error || "حدث خطأ غير معروف في الخادم.";
+            document.getElementById('score').innerText = `خطأ: ${errorMsg}`;
+            console.error("Server error:", data);
         }
       } catch (err) {
-        document.getElementById('progress').style.display = "none";
-        document.getElementById('score').innerText = "حدث خطأ أثناء تحليل السيرة الذاتية!";
+        document.getElementById('score').innerText = "حدث خطأ في الاتصال بالخادم أو أثناء تحليل السيرة الذاتية!";
+        console.error("Fetch error:", err);
+      } finally {
+        document.getElementById('progressBar').value = 100;
+        document.getElementById('progressText').innerText = "اكتمل التحليل.";
+        setTimeout(() => { // إخفاء شريط التقدم بعد فترة قصيرة
+            document.getElementById('progress').style.display = "none";
+        }, 1500);
       }
     });
   </script>
