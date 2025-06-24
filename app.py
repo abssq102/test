@@ -12,31 +12,44 @@ import tempfile
 import logging
 
 app = Flask(__name__)
+# السماح بجميع النطاقات مؤقتًا. في الإنتاج، حدد النطاقات المسموح بها.
 CORS(app)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# --- إعدادات الأمان (هام: قم بتغيير هذا الرمز في بيئة الإنتاج!) ---
+SECRET_ACCESS_CODE = "1234" # غير هذا الرمز!
+# -----------------------------------------------------------------
+
 # استخراج النص من الملف
 def extract_text(file_storage):
     filename = file_storage.filename.lower()
+    file_storage.seek(0) # إعادة المؤشر للبداية قبل القراءة
     try:
         if filename.endswith(".pdf"):
-            file_storage.seek(0)
             reader = PdfReader(file_storage)
-            return "\n".join(page.extract_text() or "" for page in reader.pages)
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            return text
         elif filename.endswith((".doc", ".docx")):
-            file_storage.seek(0)
             # docx2txt يحتاج اسم ملف، نحفظ مؤقتا
-            with tempfile.NamedTemporaryFile(delete=True, suffix=".docx", dir="/tmp") as tmp:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
                 tmp.write(file_storage.read())
-                tmp.flush()
-                text = docx2txt.process(tmp.name)
+                tmp_path = tmp.name
+            try:
+                text = docx2txt.process(tmp_path)
+            finally:
+                os.remove(tmp_path) # التأكد من حذف الملف المؤقت
             return text
         elif filename.endswith(".rtf"):
+            # قد تحتاج لضبط التشفير حسب ملف RTF
             file_storage.seek(0)
-            with io.TextIOWrapper(file_storage, encoding="utf-8", errors="ignore") as f:
-                rtf_text = f.read()
+            rtf_bytes = file_storage.read()
+            rtf_text = rtf_bytes.decode("utf-8", errors="ignore") # محاولة UTF-8 أولاً
+            try:
+                return striprtf.rtf_to_text(rtf_text)
+            except Exception:
+                rtf_text = rtf_bytes.decode("cp1252", errors="ignore") # محاولة تشفير آخر
                 return striprtf.rtf_to_text(rtf_text)
         elif filename.endswith(".txt"):
             file_storage.seek(0)
@@ -44,168 +57,239 @@ def extract_text(file_storage):
         else:
             return ""
     except Exception as e:
-        logger.error(f"Error extracting text: {e}")
+        logger.error(f"Error extracting text from {filename}: {e}", exc_info=True)
         return ""
 
-# كشف الجداول والصور في PDF وDOCX
-def detect_tables_images(file_storage):
+# كشف الجداول والصور والخطوط وأحجامها في PDF وDOCX
+def analyze_document_structure(file_storage):
     filename = file_storage.filename.lower()
     tables = 0
     images = 0
+    fonts = set()
+    font_sizes = [] # لتخزين أحجام الخطوط المكتشفة
+
+    file_storage.seek(0) # إعادة المؤشر للبداية
     try:
         if filename.endswith(".pdf"):
-            file_storage.seek(0)
-            doc = fitz.open(stream=file_storage.read(), filetype="pdf")
+            doc_data = file_storage.read()
+            doc = fitz.open(stream=doc_data, filetype="pdf")
             for page in doc:
                 images += len(page.get_images(full=True))
-                # كشف جداول (تقريبي)
-                text = page.get_text("dict")
-                vert_lines = sum(1 for l in text.get("lines", []) if abs(l['bbox'][0] - l['bbox'][2]) < 2)
-                horiz_lines = sum(1 for l in text.get("lines", []) if abs(l['bbox'][1] - l['bbox'][3]) < 2)
-                if vert_lines > 5 and horiz_lines > 5:
+                # كشف جداول (تقريبي) - لا يزال تقريبيًا
+                text_blocks = page.get_text("dict")
+                # البحث عن أنماط الجداول: عدد كبير من الخطوط الرأسية والأفقية
+                vert_lines = sum(1 for item in text_blocks.get("lines", []) if abs(item['bbox'][0] - item['bbox'][2]) < 2 and item['bbox'][3] - item['bbox'][1] > 10)
+                horiz_lines = sum(1 for item in text_blocks.get("lines", []) if abs(item['bbox'][1] - item['bbox'][3]) < 2 and item['bbox'][2] - item['bbox'][0] > 10)
+                if vert_lines > 5 and horiz_lines > 5: # عتبة تقديرية
                     tables += 1
-            doc.close()
-        elif filename.endswith(".docx"):
-            file_storage.seek(0)
-            doc = docx.Document(file_storage)
-            tables = len(doc.tables)
-            # استخدم related_parts لاكتشاف الصور (أفضل من inline_shapes على السيرفرات)
-            images = sum(1 for rel in doc.part.related_parts if "image" in rel)
-    except Exception as e:
-        logger.error(f"Error detecting tables/images: {e}")
-    return tables, images
 
-# تحليل الكلمات المفتاحية
-def analyze_text(text):
-    if not text or len(text.strip()) < 100:
-        return 0, [], [], {}
-    keywords = {
-        'experience': [
-            'experience', 'worked at', 'job history', 'خبرة', 'العمل في', 'الوظيفة'
-        ],
-        'education': [
-            'education', 'degree', 'university', 'bachelor', 'دراسة', 'تعليم', 'شهادة', 'جامعة', 'بكالوريوس'
-        ],
-        'skills': [
-            'skills', 'proficient in', 'tools', 'مهارات', 'إجادة', 'مهارة'
-        ],
-        'contact': [
-            'email', 'phone', 'contact', 'بريد', 'هاتف', 'تواصل'
-        ],
-        'objective': [
-            'objective', 'summary', 'هدف', 'ملخص'
-        ],
-        'certification': [
-            'certification', 'certified', 'license', 'شهادة', 'رخصة', 'اعتماد'
-        ]
-    }
-    section_scores = {}
-    found, missing = [], []
-    score = 100
-    text_lower = text.lower()
-    for key, variants in keywords.items():
-        present = any(v in text_lower for v in variants)
-        section_scores[key] = 100 if present else 0
-        if present:
-            found.append(key)
-        else:
-            missing.append(key)
-            score -= 10
-    detail_report = {
-        "experience": section_scores['experience'],
-        "education": section_scores['education'],
-        "skills": section_scores['skills'],
-        "contact": section_scores['contact'],
-        "objective": section_scores['objective'],
-        "certification": section_scores['certification']
-    }
-    # عقوبة الرموز
-    if re.search(r'[•★●▪◆■♦→]', text):
-        score -= 5
-    if len(text) > 5000:
-        score -= 5
-    return max(score, 0), found, missing, detail_report
-
-# استخراج الخطوط من الملفات
-def detect_fonts(file_storage):
-    fonts = set()
-    filename = file_storage.filename.lower()
-    try:
-        file_storage.seek(0)
-        if filename.endswith(".pdf"):
-            doc = fitz.open(stream=file_storage.read(), filetype="pdf")
-            for page in doc:
-                blocks = page.get_text("dict")["blocks"]
-                for b in blocks:
+                for b in page.get_text("dict")["blocks"]:
                     for l in b.get("lines", []):
                         for s in l.get("spans", []):
-                            font = s.get("font", "")
-                            if font:
-                                fonts.add(font)
+                            font_name = s.get("font", "").split('+')[-1] # إزالة البادئة العشوائية
+                            font_size = s.get("size", 0)
+                            if font_name:
+                                fonts.add(font_name)
+                            if font_size > 0:
+                                font_sizes.append(font_size)
             doc.close()
+
         elif filename.endswith(".docx"):
             doc = docx.Document(file_storage)
+            tables = len(doc.tables)
+            # استخدام related_parts لاكتشاف الصور (أفضل من inline_shapes على السيرفرات)
+            images = sum(1 for rel in doc.part.related_parts if "image" in rel.id and "image" in rel.target_parts[0].content_type)
+
             for para in doc.paragraphs:
                 for run in para.runs:
                     if run.font.name:
                         fonts.add(run.font.name)
+                    if run.font.size:
+                        # font.size يعود بكائن Pt، نحوله إلى قيمة عددية
+                        font_sizes.append(run.font.size.pt)
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for para in cell.paragraphs:
+                            for run in para.runs:
+                                if run.font.name:
+                                    fonts.add(run.font.name)
+                                if run.font.size:
+                                    font_sizes.append(run.font.size.pt)
+
     except Exception as e:
-        logger.error(f"Error extracting fonts: {e}")
-    return list(fonts)
+        logger.error(f"Error detecting tables/images/fonts: {e}", exc_info=True)
+    return tables, images, list(fonts), font_sizes
+
+# تحليل الكلمات المفتاحية والأقسام
+def analyze_text(text):
+    if not text or len(text.strip()) < 100:
+        # إذا كان النص قصيرًا جدًا أو فارغًا، أعد تقييمًا منخفضًا جدًا
+        return 0, [], [], {
+            "experience": 0, "education": 0, "skills": 0,
+            "contact": 0, "objective_summary": 0, "certification": 0
+        }
+
+    # كلمات مفتاحية مع أوزان (تقريبية) لكل قسم
+    keywords_weighted = {
+        'experience': {
+            'keywords': ['experience', 'work history', 'employment', 'responsibilities', 'achievements',
+                         'خبرة', 'سجل وظيفي', 'مهام', 'إنجازات', 'مسؤوليات'],
+            'weight': 30
+        },
+        'education': {
+            'keywords': ['education', 'degree', 'university', 'bachelor', 'master', 'phd',
+                         'دراسة', 'تعليم', 'شهادة', 'جامعة', 'بكالوريوس', 'ماجستير', 'دكتوراه'],
+            'weight': 20
+        },
+        'skills': {
+            'keywords': ['skills', 'proficient', 'expertise', 'technologies', 'tools',
+                         'مهارات', 'إجادة', 'خبرة فنية', 'أدوات', 'تقنيات'],
+            'weight': 25
+        },
+        'contact': {
+            'keywords': ['email', 'phone', 'contact', 'linkedin', 'portfolio', 'github',
+                         'بريد', 'هاتف', 'تواصل', 'لينكد إن', 'محفظة أعمال'],
+            'weight': 10
+        },
+        'objective_summary': { # تم تغيير الاسم ليكون أكثر شمولاً
+            'keywords': ['objective', 'summary', 'profile', 'career goal',
+                         'هدف', 'ملخص', 'نبذة', 'نبذة عني', 'ملف شخصي'],
+            'weight': 10
+        },
+        'certification': {
+            'keywords': ['certification', 'certified', 'license', 'licensure', 'شهادة', 'اعتماد', 'رخصة'],
+            'weight': 5
+        }
+    }
+
+    section_scores = {}
+    found_sections = []
+    missing_sections = []
+    total_score = 0
+    text_lower = text.lower()
+
+    for key, data in keywords_weighted.items():
+        present = any(v in text_lower for v in data['keywords'])
+        if present:
+            section_scores[key] = 100 # ما زال تقييم 100% إذا وجد
+            found_sections.append(key)
+            total_score += data['weight']
+        else:
+            section_scores[key] = 0
+            missing_sections.append(key)
+            # لا نخصم، بل نبني النتيجة من الأقسام الموجودة
+
+    # عقوبة الرموز غير التقليدية (ليس بالضرورة كل الرموز)
+    # يمكن تخصيص هذه الرموز لتكون أكثر استهدافًا للرموز التي تسبب مشاكل
+    if re.search(r'[\u2022\u25CF\u25BA\u25BC\u25B6\u25C0\u25C6\u25A0\u2713\u2714\u2715\u2716\u2705]', text_lower): # بعض رموز التعداد أو العلامات
+        if 'skills' not in found_sections and 'experience' not in found_sections: # خصم فقط إذا لم تستخدم في الأقسام المتوقعة
+             total_score -= 5
+             logger.info("Found problematic symbols, deducting 5 points.")
+
+    # عقوبة الطول الزائد
+    if len(text) > 5000: # أكثر من 5000 حرف قد يكون طويلاً جداً
+        total_score -= 5
+        logger.info("Resume too long, deducting 5 points.")
+
+    # ضمان أن النتيجة لا تقل عن صفر
+    return max(0, total_score), found_sections, missing_sections, section_scores
 
 # تحليل التوصيات بناءً على الخط والحجم والجداول/الصور
-def suggest_improvements(text, fonts, tables, images):
+def suggest_improvements(fonts, font_sizes, tables, images):
     suggestions = set()
     notes = []
-    ats_safe_fonts = {"Arial", "Calibri", "Times New Roman", "Georgia", "Helvetica"}
+    ats_safe_fonts = {"Arial", "Calibri", "Times New Roman", "Georgia", "Helvetica", "Verdana", "Roboto", "Lato", "Open Sans"} # تم إضافة المزيد من الخطوط الآمنة
+
+    # تحليل الخطوط المستخدمة
     for font in fonts:
         if font and font not in ats_safe_fonts:
             notes.append(f"الخط '{font}' قد لا يكون مدعومًا في أنظمة ATS.")
-            suggestions.add("استخدم خطوط مثل Arial أو Calibri لضمان التوافق.")
-    words = len(text.split())
-    if words < 100:
-        notes.append("السيرة قصيرة جدًا وقد لا توضح خبراتك.")
-    if re.search(r'(font-size:\s*\d+pt)', text.lower()):
-        pt_size = int(re.findall(r'font-size:\s*(\d+)pt', text.lower())[0])
-        if pt_size < 10 or pt_size > 14:
-            suggestions.add("يفضل أن يكون حجم الخط بين 10 و 12 نقطة للقراءة المثالية في أنظمة ATS.")
+            suggestions.add("استخدم خطوطًا شائعة مثل Arial, Calibri, Times New Roman, Helvetica لضمان التوافق.")
+
+    # تحليل أحجام الخطوط
+    if font_sizes:
+        # حساب متوسط حجم الخطوط أو حجم الخط الأكثر تكرارًا
+        # هنا نأخذ المتوسط لتبسيط الكشف
+        avg_font_size = sum(font_sizes) / len(font_sizes)
+        if avg_font_size < 9 or avg_font_size > 14: # نطاق أوسع قليلاً للقبول
+            notes.append(f"متوسط حجم الخط هو {avg_font_size:.1f} نقطة، وهو خارج النطاق الموصى به.")
+            suggestions.add("يفضل أن يكون حجم الخط الرئيسي بين 10 و 12 نقطة للقراءة المثالية في أنظمة ATS.")
+        elif avg_font_size < 10:
+             suggestions.add("حجم الخط يبدو صغيرًا بعض الشيء (أقل من 10 نقاط). قد يكون من الأفضل زيادته قليلاً.")
+        elif avg_font_size > 12:
+             suggestions.add("حجم الخط يبدو كبيرًا بعض الشيء (أكثر من 12 نقطة). قد يكون من الأفضل تقليله قليلاً.")
+
+
+    # ملاحظات على الجداول والصور
     if tables > 0:
-        notes.append(f"تم اكتشاف {tables} جدول في الملف، وهذا قد يسبب مشاكل لبعض أنظمة ATS.")
+        notes.append(f"تم اكتشاف {tables} جدول في الملف، وهذا قد يسبب مشاكل لبعض أنظمة ATS في قراءة المحتوى.")
+        suggestions.add("تجنب استخدام الجداول قدر الإمكان في السيرة الذاتية، أو حولها إلى نص عادي.")
     if images > 0:
-        notes.append(f"تم اكتشاف {images} صورة/عنصر رسومي في الملف، ويفضل تجنب الصور.")
+        notes.append(f"تم اكتشاف {images} صورة/عنصر رسومي في الملف، ويفضل تجنب الصور تمامًا.")
+        suggestions.add("يفضل عدم تضمين الصور أو العناصر الرسومية (مثل الرسوم البيانية) في السيرة الذاتية لأنظمة ATS.")
+    
+    # ملاحظات عامة
+    if not fonts: # إذا لم يتم اكتشاف أي خطوط
+        notes.append("لم يتمكن النظام من تحديد الخطوط المستخدمة. قد يكون هذا بسبب تنسيق الملف أو محتواه.")
+
+
     return notes, list(suggestions)
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
+        # التحقق من الرمز السري (إذا كان مطلوبًا) - يمكنك وضع هذا في middleware
+        # if request.headers.get('X-Secret-Code') != SECRET_ACCESS_CODE:
+        #    return jsonify({'error': 'رمز سري غير صالح'}), 403
+
         if 'resume' not in request.files:
-            return jsonify({'error': 'لم يتم رفع ملف'}), 400
+            return jsonify({'error': 'لم يتم رفع ملف السيرة الذاتية'}), 400
         uploaded_file = request.files['resume']
         if uploaded_file.filename == '':
             return jsonify({'error': 'لم يتم اختيار ملف'}), 400
 
-        text = extract_text(uploaded_file)
+        # حفظ الملف في ذاكرة مؤقتة لتمريره لدوال متعددة
+        file_content = uploaded_file.read()
+        file_stream = io.BytesIO(file_content)
+        file_stream.filename = uploaded_file.filename # للحفاظ على اسم الملف
+
+        text = extract_text(file_stream)
         if not text or len(text.strip()) < 10:
             logger.error("No text extracted from file!")
-            return jsonify({'error': 'فشل في استخراج النص من الملف أو الملف فارغ أو غير مدعوم'}), 400
+            return jsonify({'error': 'فشل في استخراج النص من الملف أو الملف فارغ أو غير مدعوم. يرجى التأكد من أن الملف نصي وقابل للقراءة.'}), 400
 
-        uploaded_file.seek(0)
-        tables, images = detect_tables_images(uploaded_file)
-        uploaded_file.seek(0)
+        # إعادة تهيئة stream بعد استخراج النص
+        file_stream.seek(0)
+        tables, images, fonts_used, font_sizes = analyze_document_structure(file_stream)
+
+        # تحليل النص
         score, found, missing, section_scores = analyze_text(text)
-        fonts_used = detect_fonts(uploaded_file)
-        notes, suggestions = suggest_improvements(text, fonts_used, tables, images)
 
+        # اقتراحات بناءً على التحليل الهيكلي
+        notes, suggestions = suggest_improvements(fonts_used, font_sizes, tables, images)
+
+        # تحليل تطابق وصف الوظيفة
         job_description = request.form.get('job_description', '').lower()
         match_score = None
         if job_description:
-            resume_words = set(text.lower().split())
-            jd_words = set(job_description.split())
+            # تنظيف النص من الرموز وعلامات الترقيم لتحسين المطابقة
+            cleaned_resume_text = re.sub(r'[^\w\s]', '', text_lower)
+            cleaned_jd_text = re.sub(r'[^\w\s]', '', job_description)
+
+            resume_words = set(cleaned_resume_text.split())
+            jd_words = set(cleaned_jd_text.split())
+
             if jd_words:
                 common = resume_words.intersection(jd_words)
+                # يمكن تحسين هذه النسبة بأخذ في الاعتبار عدد الكلمات في السيرة الذاتية
+                # مثال: متوسط نسبة الكلمات المشتركة إلى كلمات وصف الوظيفة وكلمات السيرة الذاتية
                 match_score = round((len(common) / len(jd_words)) * 100)
             else:
                 match_score = 0
+            
+            # ملاحظة: لتحسين دقة match_score بشكل كبير، ستحتاج إلى NLP أعمق
+            # مثل استخدام نماذج الكلمات (word embeddings) لحساب التشابه الدلالي.
 
         return jsonify({
             'score': score,
@@ -214,7 +298,8 @@ def analyze():
                 'missing': missing,
                 'sections': section_scores
             },
-            'fonts': fonts_used,
+            'fonts': list(fonts_used), # تحويل المجموعة إلى قائمة
+            'font_sizes_detected': [round(s, 1) for s in font_sizes], # أحجام الخطوط الفعلية المكتشفة
             'notes': notes,
             'suggestions': suggestions,
             'match_score': match_score,
@@ -222,8 +307,17 @@ def analyze():
             'images': images
         })
     except Exception as e:
-        logger.error(f"Exception in analyze: {e}")
+        logger.error(f"Exception in analyze: {e}", exc_info=True)
         return jsonify({'error': 'خطأ غير متوقع أثناء تحليل السيرة الذاتية', 'details': str(e)}), 500
+
+@app.route('/check_code', methods=['POST'])
+def check_code():
+    data = request.get_json()
+    code = data.get('code')
+    if code == SECRET_ACCESS_CODE:
+        return jsonify({'success': True}), 200
+    else:
+        return jsonify({'success': False, 'message': 'رمز سري غير صحيح'}), 401 # Unauthorized
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -233,4 +327,4 @@ def health_check():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True) # debug=True للمرحلة التجريبية فقط
