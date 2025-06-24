@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* Global Styles */
+    /* Global Styles & Variables */
     :root {
       --primary-color: #227093; /* Dark Blue */
       --secondary-color: #38ada9; /* Teal */
@@ -21,6 +21,9 @@
       --shadow-medium: 0 10px 30px rgba(0, 0, 0, 0.08);
       --success-color: #30b04a;
       --error-color: #e74c3c;
+      /* Define RGB values for shadows if needed in JS */
+      --primary-color-rgb: 34, 112, 147;
+      --secondary-color-rgb: 56, 173, 169;
     }
 
     html, body {
@@ -59,7 +62,7 @@
     .navbar img {
       height: 42px; /* Slightly larger logo */
       border-radius: 10px;
-      background: var(--light-text);
+      background: var(--light-text); /* هذه الخلفية ستظل موجودة إذا كان الشعار نفسه بخلفية غير شفافة */
       padding: 4px 14px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
     }
@@ -260,7 +263,7 @@
     }
 
     #progress {
-      display: flex;
+      display: none; /* مخفي مبدئيًا */
       flex-direction: column;
       align-items: center;
       margin: 25px 0 15px 0; /* Adjusted margins */
@@ -284,6 +287,10 @@
     .section {
       margin: 25px 0 0 0; /* More spacing between result sections */
       padding: 0 8px; /* Slight padding */
+    }
+    /* الفئة التي تخفي الأقسام افتراضيًا */
+    .section.hidden-initial {
+        display: none;
     }
     .section strong {
         display: block;
@@ -628,19 +635,21 @@
       </button>
     </form>
     <div id="score"></div>
-    <div id="progress" style="display:none;margin:12px 0;">
+    <div id="progress">
       <progress id="progressBar" value="0" max="100" style="width:100%;"></progress>
       <span id="progressText" style="margin-top: 5px; font-size: 14px; color: #555;"></span>
     </div>
-    <div class="section" id="match"></div>
-    <div class="section" id="details"></div>
-    <div class="section" id="sections"></div>
-    <div class="section" id="fonts"></div>
-    <div class="section" id="font-sizes-info"></div>
-    <div class="section" id="notes"></div>
-    <div class="section" id="suggestions"></div>
-    <div class="section" id="tables-images"></div>
+    
+    <div class="section hidden-initial" id="match"></div>
+    <div class="section hidden-initial" id="details"></div>
+    <div class="section hidden-initial" id="sections"></div>
+    <div class="section hidden-initial" id="fonts"></div>
+    <div class="section hidden-initial" id="font-sizes-info"></div>
+    <div class="section hidden-initial" id="notes"></div>
+    <div class="section hidden-initial" id="suggestions"></div>
+    <div class="section hidden-initial" id="tables-images"></div>
   </div>
+
   <footer>
     © 2025 مستند - جميع الحقوق محفوظة
     <div style="margin-top:10px;font-size:14px;color:#888;line-height:1.7;">
@@ -766,6 +775,20 @@
       }
     }
 
+    // دالة مساعدة لإظهار القسم إذا كان فيه محتوى
+    function showSectionIfContent(elementId, contentHtml) {
+        const element = document.getElementById(elementId);
+        // نتحقق من المحتوى إذا كان نصاً أو HTML (إذا كان ul فارغاً مثلاً)
+        const isEmptyHtml = (contentHtml.includes('<ul></ul>') || contentHtml.trim() === '');
+        if (contentHtml && !isEmptyHtml) {
+            element.innerHTML = contentHtml;
+            element.classList.remove('hidden-initial'); // إزالة الفئة لإظهار العنصر
+        } else {
+            element.classList.add('hidden-initial'); // إخفاء العنصر إذا لا يوجد محتوى
+            element.innerHTML = ''; // مسح المحتوى القديم
+        }
+    }
+
     // Form Submit Logic
     document.getElementById('uploadForm').addEventListener('submit', async function (e) {
       e.preventDefault();
@@ -782,22 +805,18 @@
       document.getElementById('progressText').innerText = "جاري تحميل الملف...";
       document.getElementById('score').innerText = "⏳ جاري تحليل الملف...";
       
-      // إخفاء النتائج السابقة
-      document.getElementById('details').innerHTML = '';
-      document.getElementById('sections').innerHTML = '';
-      document.getElementById('match').innerText = '';
-      document.getElementById('fonts').innerHTML = '';
-      document.getElementById('font-sizes-info').innerHTML = ''; 
-      document.getElementById('notes').innerHTML = '';
-      document.getElementById('suggestions').innerHTML = '';
-      document.getElementById('tables-images').innerHTML = '';
+      // إخفاء جميع أقسام النتائج عند بدء تحليل جديد
+      document.querySelectorAll('.section').forEach(section => {
+          section.classList.add('hidden-initial');
+          section.innerHTML = ''; // مسح المحتوى القديم أيضًا
+      });
+
 
       const formData = new FormData();
       formData.append("resume", fileInput.files[0]);
       formData.append("job_description", jobDescription);
 
       try {
-        // تحديث شريط التقدم خلال الإرسال (تقريبي)
         document.getElementById('progressBar').value = 10;
         document.getElementById('progressText').innerText = "جارٍ التحميل إلى الخادم...";
 
@@ -818,61 +837,63 @@
             document.getElementById('score').style.color = data.score >= 70 ? 'var(--success-color)' : (data.score >= 50 ? 'var(--secondary-color)' : 'var(--error-color)');
             document.getElementById('score').innerText = `نسبة التوافق: ${data.score}%`;
 
-            let html = "<strong>تحليل التفاصيل:</strong><ul>";
-            // تحسين عرض الأسماء (فقط الأحرف الأولى كبيرة)
-            data.details.found.forEach(k => html += `<li class="found">✅ موجود: ${k.charAt(0).toUpperCase() + k.slice(1).replace('_', ' ')}</li>`); 
-            data.details.missing.forEach(k => html += `<li class="missing">❌ مفقود: ${k.charAt(0).toUpperCase() + k.slice(1).replace('_', ' ')}</li>`);
-            html += "</ul>";
-            document.getElementById('details').innerHTML = html;
+            let detailsHtml = "<strong>تحليل التفاصيل:</strong><ul>";
+            data.details.found.forEach(k => detailsHtml += `<li class="found">✅ موجود: ${k.charAt(0).toUpperCase() + k.slice(1).replace('_', ' ')}</li>`); 
+            data.details.missing.forEach(k => detailsHtml += `<li class="missing">❌ مفقود: ${k.charAt(0).toUpperCase() + k.slice(1).replace('_', ' ')}</li>`);
+            detailsHtml += "</ul>";
+            showSectionIfContent('details', detailsHtml);
 
             let sectionsHTML = "<strong>تقييم كل قسم:</strong><ul>";
             for (const [section, val] of Object.entries(data.details.sections)) {
                 sectionsHTML += `<li>${section.charAt(0).toUpperCase() + section.slice(1).replace('_', ' ')}: <b>${val}%</b></li>`;
             }
             sectionsHTML += "</ul>";
-            document.getElementById('sections').innerHTML = sectionsHTML;
+            showSectionIfContent('sections', sectionsHTML);
 
             if (data.match_score !== undefined && data.match_score !== null) {
                 document.getElementById('match').innerText = `📊 نسبة تطابق السيرة مع وصف الوظيفة: ${data.match_score}%`;
                 document.getElementById('match').style.color = data.match_score >= 70 ? 'var(--success-color)' : (data.match_score >= 50 ? 'var(--secondary-color)' : 'var(--error-color)');
+                document.getElementById('match').classList.remove('hidden-initial'); // تأكد من إظهاره
             } else {
                 document.getElementById('match').innerText = '📊 لم يتم توفير وصف وظيفي للمقارنة.';
                 document.getElementById('match').style.color = '#777'; // Neutral color
+                document.getElementById('match').classList.remove('hidden-initial'); // تأكد من إظهاره
             }
 
             if (data.fonts?.length) {
-                document.getElementById('fonts').innerHTML = `<strong>🔤 الخطوط المستخدمة:</strong> ${data.fonts.join(", ")}`;
+                showSectionIfContent('fonts', `<strong>🔤 الخطوط المستخدمة:</strong> ${data.fonts.join(", ")}`);
             } else {
-                document.getElementById('fonts').innerHTML = '<strong>🔤 الخطوط المستخدمة:</strong> لم يتم اكتشاف خطوط.';
+                showSectionIfContent('fonts', ''); 
             }
 
             if (data.font_sizes_detected && data.font_sizes_detected.length > 0) {
                 const uniqueSizes = [...new Set(data.font_sizes_detected.map(s => s.toFixed(1)))];
-                document.getElementById('font-sizes-info').innerHTML = `<strong>📏 أحجام الخطوط المكتشفة (نقطة):</strong> ${uniqueSizes.sort((a,b) => parseFloat(a)-parseFloat(b)).join(", ")}`;
+                showSectionIfContent('font-sizes-info', `<strong>📏 أحجام الخطوط المكتشفة (نقطة):</strong> ${uniqueSizes.sort((a,b) => parseFloat(a)-parseFloat(b)).join(", ")}`);
             } else {
-                document.getElementById('font-sizes-info').innerHTML = '<strong>📏 أحجام الخطوط المكتشفة:</strong> لم يتم اكتشاف معلومات حجم الخط.';
+                showSectionIfContent('font-sizes-info', ''); 
             }
 
             if (data.notes?.length) {
-                document.getElementById('notes').innerHTML = '<strong>⚠️ ملاحظات هامة:</strong><ul>' + data.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>';
+                showSectionIfContent('notes', '<strong>⚠️ ملاحظات هامة:</strong><ul>' + data.notes.map(n => `<li>🔸 ${n}</li>`).join('') + '</ul>');
             } else {
-                document.getElementById('notes').innerHTML = '';
+                showSectionIfContent('notes', ''); 
             }
 
             if (data.suggestions?.length) {
-                document.getElementById('suggestions').innerHTML = '<strong>💡 اقتراحات لتحسين سيرتك:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>';
+                showSectionIfContent('suggestions', '<strong>💡 اقتراحات لتحسين سيرتك:</strong><ul>' + data.suggestions.map(s => `<li>✅ ${s}</li>`).join('') + '</ul>');
             } else {
-                document.getElementById('suggestions').innerHTML = '';
+                showSectionIfContent('suggestions', ''); 
             }
 
-            document.getElementById('tables-images').innerHTML = '';
+            let tablesImagesHtml = '';
             if ((data.tables && data.tables > 0) || (data.images && data.images > 0)) {
-                let war = `<strong>تحذيرات رسوميات أو جداول:</strong><ul>`;
-                if (data.tables > 0) war += `<li>⚠️ تم اكتشاف ${data.tables} جدول.</li>`;
-                if (data.images > 0) war += `<li>⚠️ تم اكتشاف ${data.images} صورة/عنصر رسومي.</li>`;
-                war += "</ul>";
-                document.getElementById('tables-images').innerHTML = war;
+                tablesImagesHtml = `<strong>تحذيرات رسوميات أو جداول:</strong><ul>`;
+                if (data.tables > 0) tablesImagesHtml += `<li>⚠️ تم اكتشاف ${data.tables} جدول.</li>`;
+                if (data.images > 0) tablesImagesHtml += `<li>⚠️ تم اكتشاف ${data.images} صورة/عنصر رسومي.</li>`;
+                tablesImagesHtml += "</ul>";
             }
+            showSectionIfContent('tables-images', tablesImagesHtml);
+
         } else {
             const errorMsg = data.error || "حدث خطأ غير معروف في الخادم.";
             document.getElementById('score').innerText = `خطأ: ${errorMsg}`;
