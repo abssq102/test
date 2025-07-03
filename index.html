@@ -46,25 +46,46 @@
 
     /* Navbar */
     .navbar {
-      position: sticky; /* Changed to sticky for modern feel */
+      position: sticky;
       top: 0;
       right: 0;
       left: 0;
       background: var(--light-text);
-      padding: 12px 0;
+      padding: 12px 5%; /* Adjusted padding for space */
       box-shadow: var(--shadow-light);
       display: flex;
-      justify-content: center;
+      justify-content: space-between; /* Changed to space-between */
       align-items: center;
       z-index: 100;
       border-bottom: 1px solid var(--border-color);
     }
-    .navbar img {
+    .navbar-logo {
       height: 42px; /* Slightly larger logo */
       border-radius: 10px;
-      background: var(--light-text); /* هذه الخلفية ستظل موجودة إذا كان الشعار نفسه بخلفية غير شفافة */
+      background: var(--light-text);
       padding: 4px 14px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Store Button (New) */
+    .store-btn {
+      background: var(--primary-color);
+      color: var(--light-text);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 25px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 3px 10px rgba(var(--primary-color-rgb, 34, 112, 147), 0.2);
+      text-decoration: none; /* For the <a> tag */
+    }
+    .store-btn:hover {
+      background: var(--secondary-color);
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(var(--secondary-color-rgb, 56, 173, 169), 0.25);
     }
 
     /* Main Container */
@@ -462,8 +483,12 @@
         font-size: 28px;
         margin-bottom: 20px;
       }
-      .navbar img {
+      .navbar-logo {
         height: 35px;
+      }
+      .store-btn {
+        font-size: 15px;
+        padding: 8px 22px;
       }
       .drop-area {
         min-height: 180px;
@@ -516,6 +541,9 @@
     }
 
     @media (max-width: 480px) {
+      .navbar {
+        padding: 12px 15px; /* Match container padding */
+      }
       .container {
         padding: 25px 15px;
         margin-top: 60px;
@@ -526,8 +554,12 @@
         font-size: 24px;
         margin-bottom: 15px;
       }
-      .navbar img {
+      .navbar-logo {
         height: 30px;
+      }
+      .store-btn {
+        font-size: 14px;
+        padding: 7px 20px;
       }
       .drop-area {
         min-height: 150px;
@@ -592,7 +624,8 @@
 </head>
 <body>
   <div class="navbar">
-    <img src="logo.png" alt="شعار مدقق السيرة الذاتية">
+    <img src="logo.png" alt="شعار مدقق السيرة الذاتية" class="navbar-logo">
+    <a href="https://www.docsa.store" target="_blank" rel="noopener noreferrer" class="store-btn">الى المتجر</a>
   </div>
   <div id="passwordModal">
     <div class="box">
