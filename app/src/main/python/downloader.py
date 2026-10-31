@@ -1,6 +1,7 @@
 import os
 import json
 import yt_dlp
+import shutil
 
 def download(url, folder, quality=0):
     os.makedirs(folder, exist_ok=True)
@@ -34,22 +35,33 @@ def download(url, folder, quality=0):
             info = ydl.extract_info(url, download=False)
             if not info:
                 raise RuntimeError("No video metadata returned")
-            available = [f for f in info.get("formats", [])
-                if f.get("url") and f.get("vcodec") not in (None, "none")
+            formats = info.get("formats") or []
+            combined = [f for f in formats if f.get("url")
+                and f.get("vcodec") not in (None, "none")
                 and f.get("acodec") not in (None, "none")]
             if limit:
-                within = [f for f in available if not f.get("height") or f["height"] <= limit]
-                if within:
-                    available = within
-            if not available:
-                raise RuntimeError("No combined audio/video stream available")
-            chosen = max(available, key=lambda f: (f.get("ext") == "mp4",
-                f.get("height") or 0, f.get("tbr") or 0))
-            opts["format"] = chosen["format_id"]
+                combined = [f for f in combined
+                    if not f.get("height") or f["height"] <= limit]
+            if combined:
+                chosen = max(combined, key=lambda f: (
+                    f.get("ext") == "mp4", f.get("height") or 0,
+                    f.get("tbr") or 0))
+                opts["format"] = chosen["format_id"]
+            else:
+                if not shutil.which("ffmpeg"):
+                    raise RuntimeError(
+                        "Separate audio/video streams require FFmpeg on device")
+                ceiling = "[height<=%d]" % limit if limit else ""
+                opts["format"] = "bestvideo" + ceiling + "+bestaudio/best"
+                opts["merge_output_format"] = "mp4"
         report("starting")
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            candidate = output[-1] if output else ydl.prepare_filename(info)
+            candidate = ydl.prepare_filename(info)
+            if opts.get("merge_output_format"):
+                candidate = os.path.splitext(candidate)[0] + ".mp4"
+            if not os.path.isfile(candidate) and output:
+                candidate = output[-1]
         if not os.path.isfile(candidate) or os.path.getsize(candidate) == 0:
             raise RuntimeError("Download finished but output file was not found")
         report("finished", 100, downloaded=os.path.getsize(candidate),
