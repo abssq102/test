@@ -29,7 +29,7 @@ class MainActivity : Activity() {
         window.statusBarColor = bg
         window.navigationBarColor = bg
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(30, 48, 30, 30); setBackgroundColor(bg) }
-        val scroll = ScrollView(this).apply { fillViewport = true }
+        val scroll = ScrollView(this).apply { isFillViewport = true }
         val panel = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL }
         val title = label("VIDEODOWNLOADER", 25f, Color.WHITE, true)
         val subtitle = label("حمّل فيديوهاتك مباشرة على جهازك", 16f, Color.rgb(167, 183, 204))
